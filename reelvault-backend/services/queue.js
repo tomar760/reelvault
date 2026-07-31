@@ -201,4 +201,25 @@ async function failJob(job, stage, err) {
   }
 }
 
-module.exports = { enqueue, getJob, queueLength };
+/* ---------- BOOT SWEEP: stale Pending/Retrying rows → Failed (retry queue) ----------
+   Render free tier sleeps between uses. Agar instance mid-job so gaya/restart hua,
+   in-memory job gayab → sheet row hamesha "Pending" atak jaati.
+   Har boot pe ye sweep aisi rows ko "Failed" mark karta hai —
+   taaki wo Activity → Retry Queue mein dikhne lagen (RULE 4: Failed ≠ lost). */
+async function sweepStaleOnBoot() {
+  try {
+    const all = await sheets.readVideos();
+    const stale = all.filter((v) => v.Download_Status === "Pending" || v.Download_Status === "Retrying");
+    for (const v of stale) {
+      const rowIndex = await sheets.findRowIndexBySr(v.Sr_No);
+      if (rowIndex < 0) continue;
+      v.Download_Status = "Failed";
+      v.Last_Modified = todayParts().stamp;
+      await sheets.updateVideoRow(rowIndex, await sheets.videoToRow(v));
+      await sheets.logFailure(v.Sr_No, "restart", "Instance restarted/slept mid-job — marked failed (use Retry)", 0);
+    }
+    if (stale.length) console.log(`Boot sweep: ${stale.length} stale row(s) → Failed (retry queue)`);
+  } catch (e) { console.error("boot sweep skipped:", e.message); }
+}
+
+module.exports = { enqueue, getJob, queueLength, sweepStaleOnBoot };

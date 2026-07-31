@@ -1,5 +1,5 @@
 /* ReelVault — Service Worker (PWA offline shell) */
-const CACHE = "reelvault-v1";
+const CACHE = "reelvault-v3";
 const ASSETS = [
   "./", "index.html", "library.html", "vault.html", "analytics.html", "activity.html", "settings.html",
   "css/style.css",

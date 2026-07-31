@@ -57,6 +57,14 @@ r.get("/api/health", async (req, res) => {
   res.json({ ok: true, awake: true, ts: Date.now(), queue: queue.queueLength(), sheet });
 });
 
+/* ---------- verify passcode (public — lock screen uses this) ---------- */
+r.post("/api/verify", async (req, res) => {
+  const code = (req.body || {}).code;
+  if (code === CFG.PASSCODE) return res.json({ ok: true });
+  await new Promise((s) => setTimeout(s, 400)); // slow down guessing
+  res.json({ ok: false });
+});
+
 /* ---------- add video ---------- */
 r.post("/api/add", async (req, res) => {
   try {

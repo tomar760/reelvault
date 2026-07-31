@@ -123,7 +123,16 @@
                 hooks.onStage({ label: dup ? "Duplicate" : "Failed", pct: 100, sub: job.sub || "", done: true });
                 hooks.onDone && hooks.onDone({ ...v, failed: true, duplicate: dup, error: job.error || "Download failed" });
               }
-            } catch (e) { /* transient poll error — keep polling */ }
+            } catch (e) {
+              if (/job not found/i.test(e.message || "")) {
+                clearInterval(poll);
+                await refreshCaches().catch(() => {});
+                hooks.onStage({ label: "Interrupted", pct: 100, done: true });
+                hooks.onDone && hooks.onDone({ ...v, failed: true, error: "Server restarted mid-download — this video is in Activity → Retry Queue, press Retry." });
+                return;
+              }
+              /* transient poll error — keep polling */
+            }
           }, 2500);
         } catch (e) {
           hooks.onStage({ label: "Failed", pct: 100, done: true });

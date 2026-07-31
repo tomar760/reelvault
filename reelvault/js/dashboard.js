@@ -64,6 +64,20 @@
       const b = $("#dqa-plat");
       b.textContent = p.code; b.style.background = p.color; b.style.color = "#fff";
     });
+    /* paste button on the inline form (phone pe ek tap) */
+    const pasteBtn = document.createElement("button");
+    pasteBtn.type = "button"; pasteBtn.className = "paste-btn"; pasteBtn.textContent = "⧉ Paste";
+    pasteBtn.addEventListener("click", async () => {
+      try {
+        const t = (await navigator.clipboard.readText() || "").trim();
+        if (/^https?:\/\//.test(t)) {
+          $("#dqa-link").value = t;
+          $("#dqa-link").dispatchEvent(new Event("input", { bubbles: true }));
+          RVUI.toast("Link pasted from clipboard ✨");
+        } else RVUI.toast("No link found in the clipboard", "warn");
+      } catch (e) { RVUI.toast("Clipboard access blocked by the browser", "warn"); }
+    });
+    $("#dqa-link").after(pasteBtn);
   }
 
   function runStatusCard(v) {
@@ -97,7 +111,7 @@
         if (saved && saved.failed) {
           if (saved.duplicate) RVUI.toast("Duplicate skipped — this reel is already saved.", "warn", 4200);
           else RVUI.toast("Failed: " + (saved.error || "download error") + " — see retry queue.", "err", 5200);
-        } else RVUI.toast("Saved — sheet row created.");
+        } else { RVUI.toast("Saved — sheet row created."); navigator.vibrate && navigator.vibrate([40, 60, 40]); }
       },
     });
   }

@@ -113,7 +113,8 @@
 
   const videos = [];
   const topicKeys = ["tech","tech","tech","tech","ai","ai","ai","business","business","business","finance","finance","fitness","fitness","misc"];
-  for (let i = 0; i < 48; i++) {
+  /* NO DEMO DATA — aapki real entries yahan ayengi (live mode mein Sheet se) */
+  for (let i = 0; i < 0; i++) {
     const topicKey = pick(topicKeys);
     const ratingKey = rnd() < 0.32 ? "high" : rnd() < 0.72 ? "medium" : "low";
     const platform = pick(["Instagram","Instagram","Instagram","Facebook","YouTube","X"]);
@@ -189,7 +190,7 @@
     ["edit", "Rating changed — “{t}” → {r}"],
   ];
   const activity = [];
-  for (let i = 0; i < 22; i++) {
+  for (let i = 0; i < 0; i++) {
     const v = videos[Math.floor(rnd() * videos.length)];
     const type = pick(["added","added","added","added","retry","duplicate","failed","export","edit"]);
     const tpl = ACT.find((a) => a[0] === type)[1];
@@ -223,7 +224,7 @@
       pending: vs.filter((v) => v.status === "Pending").length,
       workflows: vault.length + userVideos().filter((v) => v.workflow).length,
       driveGB: +(vs.filter((v) => v.status !== "Failed").reduce((s, v) => s + (v.size || 0), 0) / 1024).toFixed(1),
-      dupBlocked: 1,
+      dupBlocked: 0,
     };
   }
   function weeklyCounts(n) {

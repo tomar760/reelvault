@@ -56,7 +56,7 @@
         <p class="muted">Paste. Download. Organize. Done.</p>
         <div class="lock-dots">${"<span></span>".repeat(4)}</div>
         <input type="password" inputmode="numeric" maxlength="4" class="lock-input" placeholder="••••" autocomplete="off"/>
-        <p class="lock-hint muted">Demo passcode: 1234</p>
+        <p class="lock-hint muted">Enter your 4-digit passcode</p>
         <p class="lock-err"></p>
       </div>`;
     document.body.appendChild(ov);
@@ -64,8 +64,12 @@
     input.focus();
     input.addEventListener("input", () => {
       dots.forEach((d, i) => d.classList.toggle("on", i < input.value.length));
-      if (input.value.length === 4) {
-        if (input.value === code) {
+      if (input.value.length !== 4) return;
+      const entered = input.value;
+      const localOk = entered === (localStorage.getItem("rv_passcode") || "1234");
+      const finish = (ok) => {
+        if (ok) {
+          localStorage.setItem("rv_passcode", entered);
           localStorage.setItem("rv_unlocked", "1");
           ov.classList.add("bye"); setTimeout(() => ov.remove(), 500);
           onOk();
@@ -74,7 +78,17 @@
           input.value = ""; dots.forEach((d) => d.classList.remove("on"));
           ov.classList.add("shake"); setTimeout(() => ov.classList.remove("shake"), 450);
         }
-      }
+      };
+      /* Live mode: verify against the real backend (one code works on every phone).
+         Backend asleep/unreachable → fall back to local check. */
+      if (window.RV_API && RV_API.isLive()) {
+        err.textContent = "Checking…";
+        fetch(RV_API.backendURL() + "/api/verify", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: entered }),
+        }).then((r) => r.json()).then((d) => { err.textContent = ""; finish(d.ok === true || localOk); })
+          .catch(() => { err.textContent = ""; finish(localOk); });
+      } else finish(localOk);
     });
   }
 
@@ -123,10 +137,11 @@
     closeModal();
     const wrap = document.createElement("div");
     wrap.className = `modal-wrap ${cls}`;
-    wrap.innerHTML = `<div class="modal-back"></div><div class="modal glass-strong">${html}</div>`;
+    wrap.innerHTML = `<div class="modal-back"></div><div class="modal glass-strong"><div class="modal-handle"></div>${html}</div>`;
     document.body.appendChild(wrap);
     requestAnimationFrame(() => wrap.classList.add("show"));
     $(".modal-back", wrap).addEventListener("click", closeModal);
+    $(".modal-handle", wrap).addEventListener("click", closeModal);
     return wrap;
   }
   function closeModal() { $$(".modal-wrap").forEach((m) => m.remove()); }
@@ -152,6 +167,7 @@
           <span>Video Link *</span>
           <div class="link-row">
             <input id="qa-link" type="url" placeholder="https://www.instagram.com/reel/..." required/>
+            <button type="button" class="paste-btn" id="qa-paste" title="Paste from clipboard">⧉ Paste</button>
             <span class="plat-badge" id="qa-plat">—</span>
           </div>
         </label>
@@ -192,6 +208,26 @@
       </div>`);
 
     let rating = "high";
+    /* clipboard — auto-fill if a link is already copied (killer feature on phone) */
+    const linkInp = $("#qa-link", wrap);
+    async function pasteFromClipboard(target, silent) {
+      try {
+        const t = (await navigator.clipboard.readText() || "").trim();
+        if (/^https?:\/\/.+\..+/.test(t)) {
+          target.value = t;
+          target.dispatchEvent(new Event("input", { bubbles: true }));
+          RVUI.toast("Link pasted from clipboard ✨");
+          return true;
+        }
+        if (!silent) RVUI.toast("No link found in the clipboard", "warn");
+      } catch (e) {
+        if (!silent) RVUI.toast("Clipboard access blocked — long-press and paste manually", "warn");
+      }
+      return false;
+    }
+    pasteFromClipboard(linkInp, true);
+    $("#qa-paste", wrap).addEventListener("click", () => pasteFromClipboard(linkInp, false));
+
     $$("#qa-rate .rate-btn", wrap).forEach((b) => b.addEventListener("click", () => {
       $$("#qa-rate .rate-btn", wrap).forEach((x) => x.classList.remove("active"));
       b.classList.add("active"); rating = b.dataset.r;
@@ -255,6 +291,7 @@
               else RVUI.toast("Failed: " + (saved.error || "download error"), "err", 4800);
             } else {
               toast(`Saved — ${saved.fileName || "row created"}`, "ok", 4200);
+              navigator.vibrate && navigator.vibrate([40, 60, 40]);
             }
             window.RVRefresh && window.RVRefresh();
           }, 900);
@@ -327,53 +364,124 @@
     return RVData.allVideos().some((v) => v.link === link);
   }
 
-  /* ---------------- Excel export (SheetJS) ---------------- */
+  /* ---------------- Excel export (COLORFUL, styled — xlsx-js-style) ---------------- */
   function exportExcel(btn) {
     try {
       if (typeof XLSX === "undefined") { toast("Excel engine not loaded yet.", "err"); return; }
       btn && btn.classList.add("busy");
+
+      /* palette (ARGB) */
+      const C = {
+        plum: "FF3B1D8F", violet: "FF7C3AED", pink: "FFEC4899", cyan: "FF0891B2",
+        green: "FF16A34A", amber: "FFF59E0B", red: "FFDC2626", slate: "FF64748B",
+        zebra: "FFF5F2FF", white: "FFFFFFFF", dark: "FF221A38", link: "FF0563C1",
+        line: "FFDCD4F5", label: "FFEDE9FE",
+      };
+      const B = (c) => ({ style: "thin", color: { rgb: c || C.line } });
+      const border = { top: B(), bottom: B(), left: B(), right: B() };
+      const hdrStyle = (fill) => ({
+        fill: { fgColor: { rgb: fill } }, border,
+        font: { bold: true, color: { rgb: C.white }, sz: 11 },
+        alignment: { vertical: "center", horizontal: "center", wrapText: true },
+      });
+      const cellStyle = (zebra, extra = {}) => ({ border, ...(zebra ? { fill: { fgColor: { rgb: C.zebra } } } : {}), ...extra });
+      const enc = XLSX.utils.encode_cell;
+      const ratingFill = { "Very Useful": C.green, "Useful": C.amber, "Average": C.slate };
+      const statusFill = { Done: C.green, Failed: C.red, Pending: C.amber, Retrying: C.cyan };
+
+      function buildSheet(title, head, data, colWidths, opts = {}) {
+        const ws = {};
+        XLSX.utils.sheet_add_aoa(ws, [[title]], { origin: "A1" });
+        XLSX.utils.sheet_add_aoa(ws, [head], { origin: "A2" });
+        if (data.length) XLSX.utils.sheet_add_aoa(ws, data, { origin: "A3" });
+        const lastC = head.length - 1;
+        ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: lastC } }];
+        ws["!cols"] = colWidths.map((w) => ({ wch: w }));
+        ws["!rows"] = [{ hpt: 30 }, { hpt: 26 }];
+        ws["!autofilter"] = { ref: `A2:${XLSX.utils.encode_col(lastC)}${data.length + 2}` };
+        ws.A1.s = { fill: { fgColor: { rgb: C.plum } }, font: { bold: true, sz: 15, color: { rgb: C.white } }, alignment: { horizontal: "center", vertical: "center" } };
+        for (let c = 0; c <= lastC; c++) ws[enc({ r: 1, c })].s = hdrStyle(opts.hdrFill || C.violet);
+        for (let i = 0; i < data.length; i++) {
+          const r = 2 + i, zebra = i % 2 === 1;
+          for (let c = 0; c <= lastC; c++) {
+            const ref = enc({ r, c });
+            if (!ws[ref]) continue;
+            ws[ref].s = cellStyle(zebra);
+            const colName = head[c], val = data[i][c];
+            if (colName === "Rating" && ratingFill[val]) {
+              const dark = val === "Useful";
+              ws[ref].s = cellStyle(false, { fill: { fgColor: { rgb: ratingFill[val] } }, font: { bold: true, color: { rgb: dark ? C.dark : C.white } }, alignment: { horizontal: "center", vertical: "center" } });
+            }
+            if (colName === "Status" && statusFill[val]) {
+              const dark = val === "Pending";
+              ws[ref].s = cellStyle(false, { fill: { fgColor: { rgb: statusFill[val] } }, font: { bold: true, color: { rgb: dark ? C.dark : C.white } }, alignment: { horizontal: "center", vertical: "center" } });
+            }
+            if ((colName.includes("Link") && /^https?:\/\//.test(String(val)))) {
+              ws[ref].l = { Target: val };
+              ws[ref].s = cellStyle(zebra, { font: { color: { rgb: C.link }, underline: true } });
+            }
+          }
+        }
+        return ws;
+      }
+
       const vs = RVData.allVideos();
-      const rows = vs.map((v) => ({
-        "Sr No": v.sr, "Date Added": v.date, "Time": v.time, "Video Title": v.title,
-        "Platform": v.platform, "Original Link": v.link,
-        "Topic": RVData.topicOf(v.topicKey).label,
-        "Rating": RVData.ratingOf(v.ratingKey).label,
-        "Importance": v.importance, "Drive Folder Path": v.folderPath,
-        "File Name": v.fileName, "Drive File Link": v.driveLink,
-        "Status": v.status, "Size (MB)": v.size, "Duration (s)": v.duration,
-        "Workflow Received": v.workflow ? "Yes" : "No", "Remarks / Message": v.remarks,
-        "Tags": (v.tags || []).join(", "), "Added From": v.src,
-        "Duplicate Flag": v.dup ? "Yes" : "No", "Notes": v.notes || "",
-      }));
-      const wb = XLSX.utils.book_new();
-      const ws1 = XLSX.utils.json_to_sheet(rows);
-      ws1["!cols"] = Object.keys(rows[0] || {}).map((k) => ({ wch: Math.max(12, Math.min(48, k.length + 8)) }));
-      XLSX.utils.book_append_sheet(wb, ws1, "Videos");
-
-      const vrows = RVData.vault().map((w) => ({
-        "Vault ID": w.id, "Date": w.date, "Resource Name": w.name,
-        "Type": (RVData.VAULT_TYPES.find((t) => t.key === w.type) || {}).label || w.type,
-        "Source Video Sr No": w.srcSr, "Influencer": w.influencer,
-        "Resource Link": w.link, "Message": w.message, "Used It": w.used ? "Yes" : "No",
-      }));
-      const ws2 = XLSX.utils.json_to_sheet(vrows.length ? vrows : [{ "Vault ID": "—" }]);
-      XLSX.utils.book_append_sheet(wb, ws2, "Workflows_Vault");
-
-      const s = RVData.stats();
-      const ws3 = XLSX.utils.aoa_to_sheet([
-        ["ReelVault — Summary (exported)"], [],
-        ["Total videos", s.total], ["Very Useful", s.high],
-        ["Failed / Retrying", s.failed], ["Pending", s.pending],
-        ["Workflows received", s.workflows], ["Drive used (GB, demo est.)", s.driveGB],
-        ["Duplicates blocked", s.dupBlocked],
+      const head1 = ["Sr No", "Date Added", "Time", "Video Title", "Platform", "Original Link", "Topic", "Rating", "Importance", "Drive Folder Path", "File Name", "Drive File Link", "Status", "Size (MB)", "Duration (s)", "Workflow Received", "Remarks / Message", "Tags", "Added From", "Duplicate Flag", "Notes"];
+      const data1 = vs.map((v) => [
+        v.sr, v.date, v.time, v.title, v.platform, v.link,
+        RVData.topicOf(v.topicKey).label, RVData.ratingOf(v.ratingKey).label,
+        v.importance, v.folderPath, v.fileName, v.driveLink === "#demo-drive" ? "" : v.driveLink,
+        v.status, v.size || "", v.duration || "", v.workflow ? "Yes" : "No",
+        v.remarks || "", (v.tags || []).join(", "), v.src || "", v.dup ? "Yes" : "No", v.notes || "",
       ]);
+      const ws1 = buildSheet(
+        `REELVAULT — VIDEO MASTER  ·  ${vs.length} videos  ·  exported ${new Date().toLocaleString("en-IN")}`,
+        head1, data1,
+        [7, 12, 7, 34, 10, 26, 20, 12, 11, 30, 30, 26, 10, 10, 11, 12, 34, 22, 12, 12, 24]
+      );
+
+      const vault = RVData.vault();
+      const head2 = ["Vault ID", "Date", "Resource Name", "Type", "Source Video Sr No", "Influencer", "Resource Link", "Message", "Used It"];
+      const data2 = vault.map((w) => [
+        w.id, w.date, w.name, (RVData.VAULT_TYPES.find((t) => t.key === w.type) || {}).label || w.type,
+        w.srcSr, w.influencer, w.link, w.message, w.used ? "Yes" : "No",
+      ]);
+      const ws2 = buildSheet(`REELVAULT — WORKFLOW & RESOURCE VAULT  ·  ${vault.length} resources`, head2, data2.length ? data2 : [["—", "", "No resources yet", "", "", "", "", "", ""]], [8, 12, 30, 14, 16, 20, 26, 40, 9], { hdrFill: C.pink });
+
+      /* colorful summary */
+      const s = RVData.stats();
+      const ws3 = {};
+      XLSX.utils.sheet_add_aoa(ws3, [["REELVAULT — SUMMARY"]], { origin: "A1" });
+      XLSX.utils.sheet_add_aoa(ws3, [["Metric", "Value"]], { origin: "A3" });
+      const sRows = [
+        ["Total Videos", s.total, C.violet], ["Very Useful ★", s.high, C.green],
+        ["Added This Week", s.week, C.cyan], ["Failed / Retrying", s.failed, C.red],
+        ["Pending", s.pending, C.amber], ["Workflows in Vault", s.workflows, C.pink],
+        ["Drive Used (GB / 15)", s.driveGB, C.slate],
+        ["Exported On", new Date().toLocaleString("en-IN"), C.plum],
+      ];
+      sRows.forEach((r, i) => {
+        const row = 4 + i;
+        XLSX.utils.sheet_add_aoa(ws3, [[r[0], r[1]]], { origin: `A${row}` });
+        ws3[`A${row}`].s = { fill: { fgColor: { rgb: C.label } }, border, font: { bold: true, color: { rgb: C.dark }, sz: 11 } };
+        ws3[`B${row}`].s = { fill: { fgColor: { rgb: r[2] } }, border, font: { bold: true, color: { rgb: C.white }, sz: 11 }, alignment: { horizontal: "center" } };
+      });
+      ws3["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
+      ws3.A1.s = { fill: { fgColor: { rgb: C.plum } }, font: { bold: true, sz: 15, color: { rgb: C.white } }, alignment: { horizontal: "center", vertical: "center" } };
+      ws3["A3"].s = hdrStyle(C.violet); ws3["B3"].s = hdrStyle(C.violet);
+      ws3["!cols"] = [{ wch: 24 }, { wch: 22 }];
+      ws3["!rows"] = [{ hpt: 30 }];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws1, "Videos");
+      XLSX.utils.book_append_sheet(wb, ws2, "Workflows_Vault");
       XLSX.utils.book_append_sheet(wb, ws3, "Summary");
 
       const now = new Date();
       const fname = `ReelVault_Export_${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}.xlsx`;
       XLSX.writeFile(wb, fname);
-      RVData.addActivity("export", `Excel exported — ${rows.length} rows`);
-      toast(`Excel ready — ${rows.length} rows exported ✓`);
+      RVData.addActivity("export", `Excel exported — ${data1.length} rows`);
+      toast(`Colorful Excel ready — ${data1.length} rows ✓`);
       window.RVRefresh && window.RVRefresh();
     } catch (e) {
       console.error(e); toast("Export failed — see console.", "err");
@@ -398,18 +506,77 @@
     return d.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   }
 
+  /* ---------------- install-prompt capture (PWA) ---------------- */
+  let deferredInstall = null;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredInstall = e; });
+  function tryInstall() {
+    if (!deferredInstall) return false;
+    deferredInstall.prompt();
+    deferredInstall.userChoice.finally(() => (deferredInstall = null));
+    return true;
+  }
+
   /* ---------------- boot ---------------- */
+  /* ---------------- pull-to-refresh (mobile) ---------------- */
+  function initPullToRefresh() {
+    if (window.matchMedia("(min-width: 1000px)").matches) return; // desktop skip
+    if (!window.RVRefresh && !("ontouchstart" in window)) return;
+    const chip = document.createElement("div");
+    chip.id = "rv-ptr";
+    chip.innerHTML = `<span class="ptr-ico">↓</span><span class="ptr-txt">Pull to refresh</span>`;
+    document.body.appendChild(chip);
+    let startY = 0, pulling = false, dist = 0, busy = false;
+    const THRESH = 72;
+    window.addEventListener("touchstart", (e) => {
+      if (busy || window.scrollY > 2) return;
+      if (e.target.closest(".modal-wrap, .bottomnav, input, textarea, select")) return;
+      startY = e.touches[0].clientY; pulling = true; dist = 0;
+    }, { passive: true });
+    window.addEventListener("touchmove", (e) => {
+      if (!pulling || busy) return;
+      dist = e.touches[0].clientY - startY;
+      if (dist < 0) { pulling = false; chip.classList.remove("show", "ready"); return; }
+      const p = Math.min(dist / THRESH, 1.25);
+      chip.classList.toggle("show", dist > 14);
+      chip.classList.toggle("ready", dist >= THRESH);
+      chip.style.setProperty("--ptr", p.toFixed(2));
+      chip.querySelector(".ptr-txt").textContent = dist >= THRESH ? "Release to refresh" : "Pull to refresh";
+      chip.querySelector(".ptr-ico").style.transform = `rotate(${dist >= THRESH ? 180 : 0}deg)`;
+    }, { passive: true });
+    window.addEventListener("touchend", async () => {
+      if (!pulling) return; pulling = false;
+      chip.classList.remove("show", "ready");
+      if (dist >= THRESH && !busy) {
+        busy = true;
+        navigator.vibrate && navigator.vibrate(12);
+        chip.classList.add("spin"); chip.classList.add("show");
+        chip.querySelector(".ptr-txt").textContent = "Refreshing…";
+        try { window.RVRefresh ? await window.RVRefresh() : location.reload(); }
+        catch (_) {}
+        setTimeout(() => { chip.classList.remove("show", "spin"); busy = false; }, 650);
+      }
+    }, { passive: true });
+  }
+
   window.RVUI = {
     init(page) {
       document.title = `${NAV.find((n) => n.id === page)?.label || ""} · ReelVault`;
       applyTheme();
       lockIfNeeded(() => {
         buildShell(page);
+        /* offline indicator (phone ke liye zaroori) */
+        const off = document.createElement("div");
+        off.id = "rv-offline"; off.textContent = "📡 You are offline — reconnecting…";
+        document.body.appendChild(off);
+        const upd = () => off.classList.toggle("show", !navigator.onLine);
+        window.addEventListener("online", upd); window.addEventListener("offline", upd); upd();
         window.RV_BG.start(document.body.dataset.bg || "orbs");
+        initPullToRefresh();
         const boot = window["RV_PAGE_" + page];
         boot && boot();
       });
     },
+    tryInstall,
     toast, openModal, closeModal, openQuickAdd, exportExcel,
     simulateAdd, buildVideo, isDuplicate, detectPlatform,
     fmtDate, agoTs, todayInfo, esc, $, $$,

@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Settings · ReelVault</title>
   <meta name="description" content="ReelVault settings — appearance, topics, passcode, storage and install."/>
-  <meta name="theme-color" content="#0d1117"/>
+  <meta name="theme-color" content="#0c0714"/>
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <script>document.documentElement.dataset.theme = localStorage.getItem("rv_theme") || "dark";</script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body data-bg="aurora">
@@ -56,14 +56,14 @@
 
       <section class="mod glass">
         <div class="mod-h"><h3>⚙ Security</h3></div>
-        <label class="fld" style="margin-bottom:10px"><span>Change passcode (4 digits)</span>
+        <label class="fld" style="margin-bottom:10px"><span>Local lock code (this device only)</span>
           <input id="set-pass" type="password" inputmode="numeric" maxlength="4" placeholder="••••"/>
         </label>
         <div class="btn-row">
-          <button class="btn btn-mini btn-primary" id="set-pass-save">Save passcode</button>
+          <button class="btn btn-mini btn-primary" id="set-pass-save">Save code</button>
           <button class="btn btn-mini btn-ghost" id="set-lock">Show lock screen</button>
         </div>
-        <p class="muted" style="font-size:12px;margin-top:10px">Real backend will also verify this passcode server-side (Phase 2).</p>
+        <p class="muted" style="font-size:12px;margin-top:10px">Your main passcode is the Render <code>APP_PASSCODE</code> — the lock screen checks every phone against that same server code, so one code works everywhere.</p>
       </section>
 
       <section class="mod glass">
@@ -91,7 +91,7 @@
     <p class="page-footer">ReelVault Settings · demo build v1.0</p>
   </main>
 
-  <script src="js/vendor/xlsx.full.min.js"></script>
+  <script src="js/vendor/xlsx-style.min.js"></script>
   <script src="js/data.js"></script>
   <script src="js/bg.js"></script>
   <script src="js/ui.js"></script>

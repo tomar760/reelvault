@@ -5,6 +5,7 @@ const { CFG } = require("./config");
 const auth = require("./middleware/auth");
 const api = require("./routes/api");
 const sheets = require("./services/sheets");
+const queue = require("./services/queue");
 
 const app = express();
 app.disable("x-powered-by");
@@ -48,6 +49,7 @@ app.listen(CFG.PORT, async () => {
   try {
     await sheets.ensureStructure();
     console.log("Sheet structure verified ✓ (tabs + headers + lists)");
+    await queue.sweepStaleOnBoot();
   } catch (e) {
     console.error("Sheet structure check failed (will retry on first request):", e.message);
     console.error("→ Make sure the service-account email is EDITOR on the sheet + drive folder.");

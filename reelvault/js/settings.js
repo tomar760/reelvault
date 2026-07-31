@@ -94,15 +94,16 @@
       ${row("Failed / pending", s.failed + s.pending)}`;
     function row(k, v) { return `<div class="kv"><span class="muted">${k}</span><b>${v}</b></div>`; }
 
-    // PWA install help
+    // PWA install — real prompt ho to direct install, warna instructions
     $("#set-install").addEventListener("click", () => {
+      if (RVUI.tryInstall()) return;
       RVUI.openModal(`
         <h2>Install ReelVault on your phone</h2>
         <ol class="install-steps">
           <li><b>Android (Chrome):</b> open the site → menu ⋮ → <i>Add to Home screen</i> → <i>Install</i>.</li>
           <li><b>iPhone (Safari):</b> open the site → Share → <i>Add to Home Screen</i>.</li>
-          <li>Launch from the home screen icon — it opens full-screen like an app. Paste a link, hit ADD VIDEO, done.</li>
-          <li class="muted">The REAL backend (Phase 1+) will do the download/upload automatically after that.</li>
+          <li>Launch from the home-screen icon — full-screen app jaisa khulega.</li>
+          <li>Open → paste link → ADD VIDEO. Backend sab kuch automatically karega.</li>
         </ol>`);
     });
   };
