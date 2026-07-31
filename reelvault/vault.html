@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Vault · ReelVault</title>
+  <meta name="description" content="Free workflows, templates and resources received from influencers — all in one vault."/>
+  <meta name="theme-color" content="#0d1117"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <script>document.documentElement.dataset.theme = localStorage.getItem("rv_theme") || "dark";</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body data-bg="shards">
+  <canvas id="rv-bg"></canvas>
+  <div class="bg-tint"></div>
+
+  <main class="page">
+    <div class="page-head">
+      <h1>Workflow &amp; Resource Vault</h1>
+      <p><span id="vault-count">—</span> received from influencers — the real treasure</p>
+    </div>
+
+    <div class="lib-toolbar glass" style="padding:14px">
+      <input type="search" id="vault-search" placeholder="Search resources, messages, influencers…"/>
+      <select id="vf-type"></select>
+      <select id="vf-used">
+        <option value="">Used + unused</option>
+        <option value="used">Used ✓</option>
+        <option value="unused">Not used yet</option>
+      </select>
+    </div>
+
+    <!-- M9: VAULT GRID -->
+    <div class="vault-grid" id="vault-grid"></div>
+
+    <p class="page-footer">ReelVault Vault · demo data</p>
+  </main>
+
+  <script src="js/vendor/xlsx.full.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/bg.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/vault.js"></script>
+  <script>
+    RVUI.init("vault");
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: reelvault-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true

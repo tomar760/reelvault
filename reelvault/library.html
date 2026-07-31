@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Library · ReelVault</title>
+  <meta name="description" content="Every saved video — searchable, filterable, organized."/>
+  <meta name="theme-color" content="#0d1117"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <script>document.documentElement.dataset.theme = localStorage.getItem("rv_theme") || "dark";</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Poppins:wght@600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body data-bg="strips">
+  <canvas id="rv-bg"></canvas>
+  <div class="bg-tint"></div>
+
+  <main class="page">
+    <div class="page-head">
+      <h1>Content Library</h1>
+      <p><span id="lib-count">—</span> · click any card for full details</p>
+    </div>
+
+    <!-- M5: SEARCH & FILTER BAR -->
+    <div class="lib-toolbar glass" style="padding:14px">
+      <input type="search" id="lib-search" placeholder="Search title, tags, remarks, file name…"/>
+      <select id="f-platform"></select>
+      <select id="f-topic"></select>
+      <select id="f-rating"></select>
+      <select id="f-status"></select>
+      <select id="f-sort">
+        <option value="date-desc">Newest first</option>
+        <option value="date-asc">Oldest first</option>
+        <option value="size-desc">Largest files</option>
+        <option value="rating">Highest rated</option>
+      </select>
+      <label class="lib-check"><input type="checkbox" id="f-wf"/> only with workflow</label>
+      <button class="btn btn-mini btn-ghost" id="lib-clear">Clear</button>
+    </div>
+
+    <!-- M4: LIBRARY GRID -->
+    <div class="lib-grid" id="lib-grid"></div>
+    <button class="btn btn-ghost" id="lib-more">Load more</button>
+
+    <p class="page-footer">ReelVault Library · demo data</p>
+  </main>
+
+  <script src="js/vendor/xlsx.full.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/bg.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/library.js"></script>
+  <script>
+    RVUI.init("library");
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  </script>
+</body>
+</html>
