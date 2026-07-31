@@ -120,7 +120,7 @@
   function renderCharts() {
     charts.forEach((c) => c.destroy()); charts = [];
     if (typeof Chart === "undefined") return;
-    Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+    Chart.defaults.font.family = "Instrument Sans, system-ui, sans-serif";
     Chart.defaults.color = css("--muted", "#8b949e");
 
     // M6 weekly line

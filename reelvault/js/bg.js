@@ -24,7 +24,7 @@
   const R = (a, b) => a + Math.random() * (b - a);
 
   /* ---------------- EFFECT 1: ORBS (Dashboard) ---------------- */
-  const CANDY = [330, 262, 187]; // pink, violet, cyan
+  const CANDY = [100, 40, 12]; // matcha green, ochre gold, terracotta
   function makeOrbs() {
     const nodes = [];
     for (let i = 0; i < 26; i++) nodes.push({ x: R(0, W), y: R(0, H), r: R(2, 5), vx: R(-0.25, 0.25), vy: R(-0.2, 0.2), hue: CANDY[i % 3] + R(-12, 12) });
@@ -44,9 +44,9 @@
       }
       for (const n of nodes) {
         const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 5);
-        g.addColorStop(0, `hsla(${n.hue}, 85%, 65%, .5)`); g.addColorStop(1, "transparent");
+        g.addColorStop(0, `hsla(${n.hue}, 55%, 48%, .42)`); g.addColorStop(1, "transparent");
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 5, 0, 7); ctx.fill();
-        ctx.fillStyle = `hsla(${n.hue}, 90%, 72%, .9)`;
+        ctx.fillStyle = `hsla(${n.hue}, 55%, 42%, .85)`;
         ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 7); ctx.fill();
       }
     };
@@ -136,10 +136,10 @@
       for (const r of rings) {
         r.r += r.sp;
         const fade = 1 - r.r / r.max;
-        ctx.strokeStyle = `hsla(330, 90%, 65%, ${r.a * fade})`;
+        ctx.strokeStyle = `hsla(100, 45%, 45%, ${r.a * fade})`;
         ctx.lineWidth = 1.6;
         ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 7); ctx.stroke();
-        ctx.strokeStyle = `hsla(262, 85%, 70%, ${r.a * fade * 0.7})`;
+        ctx.strokeStyle = `hsla(40, 55%, 50%, ${r.a * fade * 0.7})`;
         ctx.beginPath(); ctx.arc(r.x, r.y, r.r * 0.6, 0, 7); ctx.stroke();
       }
     };
@@ -157,7 +157,7 @@
         }
         const g = ctx.createLinearGradient(0, baseY - 60, 0, baseY + 60);
         g.addColorStop(0, "transparent");
-        g.addColorStop(0.5, `hsla(${[330, 262, 187, 300][k]}, 70%, 60%, ${0.05 + 0.02 * Math.sin(t / 60 + k)})`);
+        g.addColorStop(0.5, `hsla(${[100, 40, 12, 80][k]}, 60%, 55%, ${0.05 + 0.02 * Math.sin(t / 60 + k)})`);
         g.addColorStop(1, "transparent");
         ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
         ctx.fillStyle = g; ctx.fill();

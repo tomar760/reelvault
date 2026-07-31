@@ -4,6 +4,7 @@ const { CFG, RATINGS, TOPICS, slug, todayParts } = require("../config");
 const sheets = require("../services/sheets");
 const driveSvc = require("../services/drive");
 const queue = require("../services/queue");
+const nim = require("../services/nim");
 
 const r = express.Router();
 
@@ -63,6 +64,43 @@ r.post("/api/verify", async (req, res) => {
   if (code === CFG.PASSCODE) return res.json({ ok: true });
   await new Promise((s) => setTimeout(s, 400)); // slow down guessing
   res.json({ ok: false });
+});
+
+/* ---------- AI usage stats ---------- */
+r.get("/api/aistats", async (_req, res) => {
+  try {
+    const s = nim.stats();
+    res.json({
+      ok: true,
+      mode: s.configured ? "NVIDIA NIM (Llama 3.1 · free tier)" : "Not configured — add NIM_API_KEY on Render",
+      model: s.model,
+      configured: s.configured,
+      callsTotal: s.total,
+      callsChat: s.chat,
+      callsTagging: s.tag,
+      errors: s.errors,
+      lastError: s.lastError || "",
+      countingSince: s.since,
+      note: "Counts reset when the server redeploys/restarts.",
+    });
+  } catch (e) { fail(res, e); }
+});
+
+/* ---------- AI chat (dashboard chatbot) ---------- */
+r.post("/api/chat", async (req, res) => {
+  try {
+    const { messages } = req.body || {};
+    if (!Array.isArray(messages) || !messages.length) return res.status(400).json({ ok: false, error: "messages[] required" });
+    let ctx = "";
+    try {
+      const vs = await sheets.readVideos();
+      const done = vs.filter((x) => x.Download_Status === "Done").length;
+      ctx = `Total videos saved: ${vs.length}, Done: ${done}, Failed: ${vs.filter((x) => x.Download_Status === "Failed").length}, Pending: ${vs.filter((x) => x.Download_Status === "Pending").length}`;
+    } catch {}
+    const reply = await nim.chat(messages, ctx);
+    if (!reply) return res.json({ ok: true, reply: null, fallback: true });
+    res.json({ ok: true, reply });
+  } catch (e) { fail(res, e); }
 });
 
 /* ---------- add video ---------- */

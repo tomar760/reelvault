@@ -7,7 +7,7 @@
 
   function destroyAll() { charts.forEach((c) => c.destroy()); charts = []; }
   function baseOpts() {
-    Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+    Chart.defaults.font.family = "Instrument Sans, system-ui, sans-serif";
     Chart.defaults.color = css("--muted", "#8b949e");
     return { responsive: true, maintainAspectRatio: false, animation: { duration: 1100, easing: "easeOutQuart" } };
   }

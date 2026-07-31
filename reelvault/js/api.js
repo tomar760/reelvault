@@ -184,6 +184,8 @@
     },
     async disconnect() { localStorage.removeItem("rv_backend_url"); location.reload(); },
     refresh: async () => { await refreshCaches(); window.RVRefresh && window.RVRefresh(); },
+    async chat(messages) { if (!isLive()) return { reply: null }; return await req("/api/chat", { method: "POST", body: JSON.stringify({ messages }) }); },
+    async aistats() { if (!isLive()) return null; return await req("/api/aistats"); },
   };
 
   if (!isLive()) return; // ← DEMO MODE: nothing changes

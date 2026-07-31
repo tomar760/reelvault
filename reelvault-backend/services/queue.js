@@ -71,7 +71,7 @@ async function processJob(job) {
   /* 2 — metadata */
   job.stage = "metadata";
   setState(job, { state: "metadata", pct: 14, label: "Fetching metadata (yt-dlp)…" });
-  let meta = { title: "Untitled video", caption: "", duration: 0, platform: dl.detectPlatform(p.link), webpage: p.link };
+  let meta = { title: "Untitled video", caption: "", duration: 0, platform: dl.detectPlatform(p.link), webpage: p.link, thumb: "" };
   try { meta = await dl.fetchMetadata(p.link); }
   catch (e) { console.error("metadata fallback:", e.message); }
 
@@ -102,7 +102,7 @@ async function processJob(job) {
     Topic: topicLabel, Rating: rating.label, Importance: rating.importance,
     Drive_Folder_Path: folderPath, File_Name: "—", Drive_File_Link: "",
     Download_Status: "Pending", File_Size_MB: "", Duration_Sec: meta.duration || "",
-    Thumbnail_Link: "", Workflow_Received: p.wf ? "Yes" : "No",
+    Thumbnail_Link: meta.thumb || "", Workflow_Received: p.wf ? "Yes" : "No",
     Remarks_Message: p.msg || "", Tags: tags.join(", "), Added_From: p.src || "Dashboard",
     Last_Modified: "", Duplicate_Flag: "No", Notes: "",
   });
@@ -141,7 +141,7 @@ async function processJob(job) {
     Drive_Folder_Path: folderPath, File_Name: fileName,
     Drive_File_Link: up.webViewLink || `https://drive.google.com/file/d/${up.id}/view`,
     Download_Status: "Done", File_Size_MB: String(sizeMB),
-    Thumbnail_Link: up.thumbnailLink || `https://drive.google.com/thumbnail?id=${up.id}`,
+    Thumbnail_Link: p.thumb || meta.thumb || up.thumbnailLink || `https://drive.google.com/thumbnail?id=${up.id}`,
   });
   await sheets.updateVideoRow(job.rowIndex, await sheets.videoToRow(finalRow));
 

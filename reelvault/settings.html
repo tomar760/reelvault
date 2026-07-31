@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Settings · ReelVault</title>
   <meta name="description" content="ReelVault settings — appearance, topics, passcode, storage and install."/>
-  <meta name="theme-color" content="#0c0714"/>
+  <meta name="theme-color" content="#f6f4ec"/>
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <script>document.documentElement.dataset.theme = localStorage.getItem("rv_theme") || "dark";</script>
+  <script>document.documentElement.dataset.theme = localStorage.getItem("rv_theme") || "light";</script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body data-bg="aurora">
@@ -43,6 +43,25 @@
           <button class="btn btn-mini btn-ghost" id="be-disc">Disconnect (demo)</button>
         </div>
         <p class="muted" id="be-status-line" style="font-size:12px;margin-top:10px">Status: DEMO MODE — sample data only.</p>
+      </section>
+
+      <section class="mod glass" style="grid-column:1/-1;border-top:3px solid var(--violet)">
+        <div class="mod-h"><h3>✦ AI Assistant (NVIDIA NIM · free)</h3><span class="tag" id="ai-mode-tag">…</span></div>
+        <p class="muted" style="font-size:12.5px;margin-bottom:12px">
+          ReelVault uses a free NVIDIA NIM model (Llama 3.1) for two jobs: <b>(1)</b> auto-tagging &amp; topic detection of every video you add, <b>(2)</b> the "Ask AI" chat you see at the bottom-right of the app.
+          If the AI key is missing on the backend, tagging/chat fall back to built-in local logic — the app keeps working.
+        </p>
+        <div class="ai-stats" id="ai-stats">
+          <div class="ai-tile"><b id="ai-total">—</b><span>Total AI calls</span></div>
+          <div class="ai-tile"><b id="ai-chat">—</b><span>Chat calls</span></div>
+          <div class="ai-tile"><b id="ai-tag">—</b><span>Tagging calls</span></div>
+          <div class="ai-tile"><b id="ai-err">—</b><span>Errors</span></div>
+        </div>
+        <div class="btn-row" style="margin-top:12px">
+          <button class="btn btn-mini btn-primary" id="ai-open-chat">Open AI chat</button>
+          <button class="btn btn-mini btn-ghost" id="ai-refresh">Refresh stats</button>
+        </div>
+        <p class="muted" id="ai-status-line" style="font-size:12px;margin-top:10px">Checking AI status…</p>
       </section>
 
       <section class="mod glass">

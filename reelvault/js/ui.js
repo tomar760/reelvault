@@ -34,12 +34,12 @@
 
   /* ---------------- theme ---------------- */
   function applyTheme() {
-    const th = localStorage.getItem("rv_theme") || "dark";
+    const th = localStorage.getItem("rv_theme") || "light";
     document.documentElement.dataset.theme = th;
     $$(".js-theme-icon").forEach((e) => (e.textContent = th === "dark" ? "☾" : "☀"));
   }
   function toggleTheme() {
-    localStorage.setItem("rv_theme", (localStorage.getItem("rv_theme") || "dark") === "dark" ? "light" : "dark");
+    localStorage.setItem("rv_theme", (localStorage.getItem("rv_theme") || "light") === "dark" ? "light" : "dark");
     applyTheme(); toast("Theme updated");
   }
 
@@ -517,6 +517,103 @@
   }
 
   /* ---------------- boot ---------------- */
+  /* ---------------- collapsible dashboard modules (mobile-first) ---------------- */
+  function initModuleCollapsers() {
+    const mods = $$(".dash .mod");
+    if (!mods.length) return;
+    const isPhone = window.matchMedia("(max-width: 999px)").matches;
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem("rv_modc") || "{}"); } catch (_) {}
+    mods.forEach((m, i) => {
+      const h = m.querySelector(".mod-h");
+      if (!h) return;
+      const key = (h.textContent || "mod" + i).trim().replace(/\s+/g, " ").slice(0, 26) + "_" + i;
+      h.classList.add("collapse-head");
+      const chev = document.createElement("span");
+      chev.className = "mod-chev"; chev.setAttribute("aria-hidden", "true");
+      h.appendChild(chev);
+      const apply = (c) => { m.classList.toggle("mod-collapsed", c); };
+      /* phone pe: sirf Quick Add, Live Status, Failed Queue khula — baaki collapsed */
+      const keepOpen = /quick add|live download|failed/i.test(h.textContent);
+      let collapsed = key in saved ? !!saved[key] : (isPhone ? !keepOpen : false);
+      apply(collapsed);
+      h.addEventListener("click", (e) => {
+        if (e.target.closest("button, a, input, select, textarea, form")) return;
+        collapsed = !collapsed;
+        apply(collapsed);
+        saved[key] = collapsed;
+        try { localStorage.setItem("rv_modc", JSON.stringify(saved)); } catch (_) {}
+      });
+    });
+  }
+
+  /* ---------------- AI chat widget ---------------- */
+  function initAIChat() {
+    if (document.getElementById("rv-aichat")) return;
+    const wrap = document.createElement("div");
+    wrap.id = "rv-aichat";
+    wrap.innerHTML = `
+      <button class="aichat-fab" id="aichat-fab" aria-label="Ask ReelVault AI"><span class="aif-ico">\u2726</span><span class="aif-txt">Ask AI</span></button>
+      <div class="aichat-panel glass-strong" id="aichat-panel" hidden>
+        <div class="aichat-head">
+          <div class="aichat-title"><span class="aichat-orb">\u2726</span><div><b>ReelVault AI</b><small class="muted">ask anything about your vault</small></div></div>
+          <button class="aichat-close" id="aichat-close" aria-label="Close chat">\u2715</button>
+        </div>
+        <div class="aichat-body" id="aichat-body"></div>
+        <form class="aichat-form" id="aichat-form">
+          <input id="aichat-inp" type="text" placeholder="Type a message\u2026" autocomplete="off"/>
+          <button type="submit" class="aichat-send" aria-label="Send">\u27A4</button>
+        </form>
+      </div>`;
+    document.body.appendChild(wrap);
+    const fab = wrap.querySelector("#aichat-fab"), panel = wrap.querySelector("#aichat-panel"),
+          body = wrap.querySelector("#aichat-body"), form = wrap.querySelector("#aichat-form"),
+          inp = wrap.querySelector("#aichat-inp");
+    const hist = [{ role: "assistant", content: "Hi! I am ReelVault AI. Ask me anything about your vault \u2014 downloads, topics, workflows, or troubleshooting. \u2726" }];
+    const OPEN_KEY = "rv_aichat_open";
+    const paint = () => {
+      body.innerHTML = hist.map((m) => `<div class="aichat-msg ${m.role}">${esc(m.content)}</div>`).join("");
+      body.scrollTop = body.scrollHeight;
+    };
+    const setOpen = (o) => {
+      panel.hidden = !o;
+      fab.classList.toggle("hidden", o);
+      try { localStorage.setItem(OPEN_KEY, o ? "1" : "0"); } catch (_) {}
+      if (o) { paint(); setTimeout(() => inp.focus({ preventScroll: true }), 250); }
+    };
+    fab.addEventListener("click", () => setOpen(true));
+    wrap.querySelector("#aichat-close").addEventListener("click", () => setOpen(false));
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const q = inp.value.trim(); if (!q) return;
+      inp.value = "";
+      hist.push({ role: "user", content: q });
+      const thinking = { role: "assistant", content: "\u2026" };
+      hist.push(thinking); paint();
+      navigator.vibrate && navigator.vibrate(8);
+      let ans = null;
+      try {
+        if (window.RV_API && RV_API.chat) {
+          const r = await RV_API.chat(hist.filter((m) => m !== thinking).slice(-10));
+          ans = r && r.reply;
+        }
+      } catch (_) { ans = null; }
+      if (!ans) {
+        /* offline/demo fallback \u2014 local smart replies */
+        const low = q.toLowerCase();
+        const st = RVData.stats();
+        if (/kitne|how many|total|count/.test(low)) ans = `Your vault currently holds **${st.total} videos** \u2014 ${st.week} added this week, ${st.high} rated Very Useful.`;
+        else if (/fail|error|pending|retry/.test(low)) ans = `Failed/Pending items right now: **${st.failed}**. Open the Activity page and tap "Retry now" \u2014 if the server is awake it finishes in 20-40 seconds.`;
+        else if (/workflow|vault/.test(low)) ans = `The Vault tab keeps **${st.workflows} workflows/resources** you received from influencers.`;
+        else if (/excel|export|sheet/.test(low)) ans = `Tap the "\u2B07 Excel" button at the top \u2014 your whole library downloads in one click with 3 colourful sheets.`;
+        else ans = `I am in offline mode right now (the AI key is not set on the backend, or the server is asleep). Check Settings \u2192 AI Assistant for the status. I can still answer vault questions \u2014 try asking "how many videos?"`;
+      }
+      thinking.content = ans.replace(/\*\*(.+?)\*\*/g, "$1");
+      paint();
+    });
+    if (localStorage.getItem(OPEN_KEY) === "1") setOpen(true);
+  }
+
   /* ---------------- pull-to-refresh (mobile) ---------------- */
   function initPullToRefresh() {
     if (window.matchMedia("(min-width: 1000px)").matches) return; // desktop skip
@@ -572,6 +669,8 @@
         window.addEventListener("online", upd); window.addEventListener("offline", upd); upd();
         window.RV_BG.start(document.body.dataset.bg || "orbs");
         initPullToRefresh();
+        initModuleCollapsers();
+        initAIChat();
         const boot = window["RV_PAGE_" + page];
         boot && boot();
       });

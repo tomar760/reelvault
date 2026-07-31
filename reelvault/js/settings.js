@@ -96,14 +96,48 @@
 
     // PWA install — real prompt ho to direct install, warna instructions
     $("#set-install").addEventListener("click", () => {
+    /* ---- AI assistant stats ---- */
+    async function loadAIStats() {
+      const line = $("#ai-status-line"), tagEl = $("#ai-mode-tag");
+      try {
+        if (!(window.RV_API && RV_API.isLive && RV_API.isLive())) {
+          if (tagEl) { tagEl.textContent = "DEMO"; }
+          ["#ai-total","#ai-chat","#ai-tag","#ai-err"].forEach((id) => { const e = $(id); if (e) e.textContent = "—"; });
+          if (line) line.textContent = "Connect the backend above to see live AI usage. (Demo mode: local tagging simulation only.)";
+          return;
+        }
+        const s = await RV_API.aistats();
+        if (!s) throw new Error("no data");
+        if (tagEl) { tagEl.textContent = s.configured ? "LIVE AI" : "LOCAL MODE"; tagEl.classList.toggle("anim", !!s.configured); }
+        $("#ai-total").textContent = s.callsTotal;
+        $("#ai-chat").textContent = s.callsChat;
+        $("#ai-tag").textContent = s.callsTagging;
+        $("#ai-err").textContent = s.errors;
+        if (line) line.textContent = s.configured
+          ? `Mode: ${s.mode} · Model: ${s.model} · counting since ${new Date(s.countingSince).toLocaleString()}${s.lastError ? " · last error: " + s.lastError : ""}. ${s.note}`
+          : "NIM_API_KEY is not set on the backend — AI is running in LOCAL fallback mode (app still works). Add the key on Render to enable real AI.";
+      } catch (e) {
+        if (line) line.textContent = "Could not load AI stats: " + e.message;
+      }
+    }
+    const aiBtn = $("#ai-refresh");
+    aiBtn && aiBtn.addEventListener("click", loadAIStats);
+    const openChatBtn = $("#ai-open-chat");
+    openChatBtn && openChatBtn.addEventListener("click", () => {
+      const fab = document.getElementById("aichat-fab");
+      if (fab) { fab.click(); RVUI.toast("Chat opened — ask anything ✦"); }
+      else RVUI.toast("Chat is available on every page — bottom-right", "warn");
+    });
+    loadAIStats();
+
       if (RVUI.tryInstall()) return;
       RVUI.openModal(`
         <h2>Install ReelVault on your phone</h2>
         <ol class="install-steps">
           <li><b>Android (Chrome):</b> open the site → menu ⋮ → <i>Add to Home screen</i> → <i>Install</i>.</li>
           <li><b>iPhone (Safari):</b> open the site → Share → <i>Add to Home Screen</i>.</li>
-          <li>Launch from the home-screen icon — full-screen app jaisa khulega.</li>
-          <li>Open → paste link → ADD VIDEO. Backend sab kuch automatically karega.</li>
+          <li>Launch from the home-screen icon — it opens full-screen like an app.</li>
+          <li>Open → paste link → ADD VIDEO. The backend handles everything automatically.</li>
         </ol>`);
     });
   };

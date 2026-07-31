@@ -44,11 +44,19 @@
     $("#lib-count").textContent = `${vs.length} video${vs.length === 1 ? "" : "s"}`;
     $("#lib-grid").innerHTML = shown.map((v) => {
       const t = RVData.topicOf(v.topicKey), r = RVData.ratingOf(v.ratingKey), p = RVData.platformOf(v.platform);
+      /* real video thumbnail: sheet col P → YouTube derive → topic art fallback */
+      let thumbUrl = v.thumb || "";
+      if (!/^https?:\/\//.test(thumbUrl)) {
+        const ym = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{6,20})/.exec(v.link || "");
+        thumbUrl = ym ? `https://img.youtube.com/vi/${ym[1]}/mqdefault.jpg` : t.thumb;
+      }
+      const durFmt = (s) => { s = Math.round(+s || 0); if (!s) return "—"; const m = Math.floor(s / 60); return m ? `${m}:${String(s % 60).padStart(2, "0")}` : `${s}s`; };
       return `
       <article class="lib-card glass" data-sr="${v.sr}">
         <div class="lib-thumb" style="background-image:url('${t.thumb}')">
+          <img class="lib-thumb-img" loading="lazy" src="${thumbUrl}" alt="" referrerpolicy="no-referrer" onerror="this.remove()"/>
           <span class="plat-badge" style="background:${p.color}">${p.code}</span>
-          <span class="dur">${v.duration ? v.duration + "s" : "—"}</span>
+          <span class="dur">${durFmt(v.duration)}</span>
           ${v.status !== "Done" ? `<span class="thumb-flag">${v.status}</span>` : ""}
         </div>
         <div class="lib-body">
@@ -74,9 +82,16 @@
     const v = RVData.allVideos().find((x) => x.sr === sr);
     if (!v) return;
     const t = RVData.topicOf(v.topicKey), r = RVData.ratingOf(v.ratingKey), p = RVData.platformOf(v.platform);
+    let thumbUrl = v.thumb || "";
+    if (!/^https?:\/\//.test(thumbUrl)) {
+      const ym = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{6,20})/.exec(v.link || "");
+      thumbUrl = ym ? `https://img.youtube.com/vi/${ym[1]}/mqdefault.jpg` : t.thumb;
+    }
+    const durFmt = (s) => { s = Math.round(+s || 0); if (!s) return "—"; const m = Math.floor(s / 60); return m ? `${m}:${String(s % 60).padStart(2, "0")}` : `${s}s`; };
     const wrap = RVUI.openModal(`
       <div class="detail">
         <div class="detail-thumb" style="background-image:url('${t.thumb}')">
+          <img class="lib-thumb-img" loading="lazy" src="${thumbUrl}" alt="" referrerpolicy="no-referrer" onerror="this.remove()"/>
           <span class="plat-badge" style="background:${p.color}">${p.code}</span>
         </div>
         <h2>${esc(v.title)}</h2>
@@ -87,7 +102,7 @@
         </div>
         <div class="kv-grid">
           ${kv("Sr. No.", v.sr)} ${kv("Added", RVUI.fmtDate(v.date) + " · " + v.time)}
-          ${kv("Size", v.size ? v.size + " MB" : "—")} ${kv("Duration", v.duration ? v.duration + " s" : "—")}
+          ${kv("Size", v.size ? v.size + " MB" : "—")} ${kv("Duration", durFmt(v.duration))}
           ${kv("Importance", v.importance)} ${kv("Added from", v.src)}
         </div>
         <div class="fld-block"><span>File name</span><code>${esc(v.fileName)}</code></div>

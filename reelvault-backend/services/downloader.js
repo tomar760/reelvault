@@ -38,6 +38,13 @@ async function fetchMetadata(url) {
     duration: Math.round(info.duration || 0),
     platform: detectPlatform(url),
     webpage: info.webpage_url || url,
+    thumb: (() => {
+      const t = info.thumbnail || "";
+      if (/^https?:\/\//.test(t)) return t;
+      // YouTube fallback — img.youtube.com thumbs never expire
+      const m = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{6,20})/.exec(url);
+      return m ? `https://img.youtube.com/vi/${m[1]}/mqdefault.jpg` : "";
+    })(),
   };
 }
 
