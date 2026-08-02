@@ -1,9 +1,10 @@
-/* ReelVault — Google Drive service (folders tree + upload + move) */
+/* ReelVault — Google Drive service (folders tree + upload + move)
+   OAuth (user identity) ho toh wahi use hota hai — warna service account (read-only-ish) */
 const fs = require("fs");
-const { clients } = require("./google");
+const { driveClient } = require("./google");
 const { CFG, SPECIAL_FOLDERS, slug } = require("../config");
 
-const drv = () => clients().drive;
+const drv = () => driveClient().drive;
 const folderCache = new Map(); // "parentId/name" -> folderId
 
 async function findChildFolder(parentId, name) {

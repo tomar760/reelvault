@@ -93,7 +93,16 @@ r.get("/api/diag", async (_req, res) => {
   try {
     const dl = require("../services/downloader");
     const p = await dl.probe();
-    res.json({ ok: true, ...dl.diagInfo(), nimConfigured: !!CFG.NIM_KEY, probe: p, time: new Date().toISOString() });
+    let driveMode = "unknown";
+    try { driveMode = require("../services/google").driveClient().mode; } catch (e) { driveMode = "error: " + e.message.slice(0, 80); }
+    res.json({
+      ok: true, ...dl.diagInfo(), nimConfigured: !!CFG.NIM_KEY, probe: p,
+      driveMode,
+      driveHint: driveMode === "oauth-user"
+        ? "Uploads tumhaare apne account + 15GB se honge ✓"
+        : "Google (2025) service-account uploads BLOCK karta hai — 3 OAuth vars set karo (guide: DRIVE OAUTH chapter)",
+      time: new Date().toISOString(),
+    });
   } catch (e) { fail(res, e); }
 });
 

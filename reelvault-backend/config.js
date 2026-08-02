@@ -11,6 +11,10 @@ const CFG = {
   RETRY_GAP_MIN: +(process.env.RETRY_GAP_MIN || 5),
   RETRY_MAX: 3,
   MAX_FILE_MB: 700,
+  /* Drive upload as the USER (Google 2025: service accounts can't upload) */
+  OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
+  OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+  OAUTH_REFRESH_TOKEN: process.env.GOOGLE_OAUTH_REFRESH_TOKEN || "",
 };
 
 /* Must match the frontend (js/data.js) + SOP sections 6 & 7 */

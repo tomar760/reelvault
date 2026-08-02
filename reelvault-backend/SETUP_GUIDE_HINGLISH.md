@@ -248,3 +248,61 @@ Backend khud: download → Drive ke sahi folder → Sheet entry → dashboard up
 - **YouTube videos bhi fail ho rahe?** Wahi process **youtube.com** pe login karke dohrao — nikalne wali file ka content Notepad mein Instagram wale ke **neeche jod do (append)**, phir dono ka mila content ek saath `IG_COOKIES_TXT` mein paste karo. (Header line `# Netscape HTTP Cookie File...` sirf ek baar upar rahe — doosri file ki header hata dena.)
 - **Cookies kitne din chalti hain?** Instagram ki cookies hafton-chale; agar kabhi phir "login required" aane lage toh Step B–C dohra do (fresh export → paste → save).
 - **Khatra?** Ye cookies sirf tumhare apne Render server pe rehti hain — par phir bhi kisi ko mat bhejna. Apna kaam ho jaye toh chaaho toh Instagram mein kuch nahi karna — cookies mein password hota hi nahi.
+
+---
+
+## 🌟 DRIVE OAUTH — Upload ka FINAL fix (Google 2025 rule) — 10–15 min, sirf ek baar
+
+**Kyun?** Google ne 2025 mein service accounts ka Drive-upload quota **khatam** kar diya. Error aata hai: *"Service Accounts do not have storage quota"*. Free Gmail pe Shared Drive / delegation nahi milta — isliye server ko tumhari identity ka **refresh token** denge; phir upload **tumhaare account, tumhaari 15GB** se hoga. Sheet ka kaam service account se chalta rahega (wo perfect hai).
+
+### Step 1 — Cloud Console kholo
+1. **console.cloud.google.com** kholo (usi Gmail se jisme service account banaya tha).
+2. Upar **project selector** pe wahi project chuno (jisme service account / key.json bana tha).
+
+### Step 2 — OAuth consent screen set karo (2 min)
+1. Baaye menu ☰ → **APIs & Services → OAuth consent screen**.
+2. "Get started" aaye toh: **App name** = `ReelVault` · **User support email** = apna Gmail → **Next**.
+3. **Audience** = **External** → Next. **Contact info** = apna Gmail → **Finish/Create**.
+
+### Step 3 — Scope add karo (1 min)
+1. Baaye menu **Data Access** (Scopes) → **Add or remove scopes**.
+2. Neeche **"Manually add scopes"** box mein ye paste karo:
+   `https://www.googleapis.com/auth/drive`
+3. **Add to table** → **Update** → **Save**.
+
+### Step 4 — Apne aap ko test user banao (30 sec)
+1. Baaye menu **Audience** → **Test users** → **Add users** → apna Gmail likho → **Add**.
+
+### Step 5 — ⚠️ PUBLISH karo (sabse zaroori!)
+1. **Audience** page pe upar **"Publish app"** button → **Confirm**.
+2. Ye na kiya toh refresh token **7 din mein expire** ho jayega. Publish ke baad kabhi expire nahi hoga. (Verification ki zaroorat nahi — apna personal app hai.)
+
+### Step 6 — OAuth Client banao (2 min)
+1. **APIs & Services → Credentials** → **+ Create Credentials → OAuth client ID**.
+2. **Application type** = **Web application** · **Name** = `ReelVault Web`.
+3. **Authorized redirect URIs → + Add URI** → paste: `https://developers.google.com/oauthplayground`
+4. **Create** → **Client ID** aur **Client Secret** copy karke Notepad mein save kar lo → OK.
+
+### Step 7 — Refresh token nikalo (3 min)
+1. Browser mein kholo: **https://developers.google.com/oauthplayground**
+2. Upar-right **⚙️ gear icon (OAuth 2.0 configuration)** → **"Use your own OAuth credentials" tick karo** → apna **Client ID + Client Secret** paste → **Close**.
+3. Baaye **"Step 1 Select & authorize APIs"** ke neeche wale input box mein ye paste karo:
+   `https://www.googleapis.com/auth/drive`
+4. **Authorize APIs** dabao → **apna Google account chuno** → warning aaye *"Google hasn't verified this app"* toh → **Advanced → Go to ReelVault Web (unsafe)** → **Continue** → Allow/Select all.
+5. Ab **"Step 2 Exchange authorization code for tokens"** khulega → **"Exchange authorization code for tokens"** dabao → **Refresh token** dikhega (`1//` se shuru) → **copy kar lo**.
+
+### Step 8 — Render pe 3 variables lagao (2 min)
+1. **render.com → reelvault (Web Service) → Environment**.
+2. Ye 3 add karo:
+   | Key | Value |
+   |---|---|
+   | `GOOGLE_OAUTH_CLIENT_ID` | (Step 6 ka Client ID) |
+   | `GOOGLE_OAUTH_CLIENT_SECRET` | (Step 6 ka Client Secret) |
+   | `GOOGLE_OAUTH_REFRESH_TOKEN` | (Step 7 ka Refresh token) |
+3. **Save Changes** → Render khud redeploy karega (2–3 min).
+
+### Step 9 — Confirm + Test (1 min)
+1. App → **Settings → ▶ Run self-test** → ab dikhega: `driveMode: "oauth-user"` ✅
+2. Failed videos pe **Retry** (ya AI chat: "retry karo") → download + upload dono DONE! 🎉
+
+**Notes:** Refresh token mein password nahi hota; wo sirf tumhara ReelVault backend use karta hai. Gmail password badloge toh naya token nikalna padega (Step 7–8 dohrao).

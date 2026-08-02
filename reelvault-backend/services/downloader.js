@@ -138,6 +138,7 @@ function detectPlatform(url) {
 /* ---------- friendly error mapping ---------- */
 function friendlyError(raw) {
   const msg = String(raw || "");
+  if (/Service Accounts do not have storage quota|storageQuotaExceeded|storage quota/i.test(msg)) return "Google Drive ne service-account upload roka (2025 rule) — OAuth setup karo (guide: 🌟 DRIVE OAUTH chapter, 10 min)";
   if (/sign in to confirm|not a bot|bot.?check|consent|challenge/i.test(msg)) return "YouTube/Instagram ne server ko bot samajh liya — cookies lagao (IG_COOKIES_TXT, guide dekho)";
   if (/rate.?limit|429|too many requests/i.test(msg)) return "Instagram rate-limit — thodi der baad Retry karo (ya IG_COOKIES lagao)";
   if (/login|required|private|403/i.test(msg)) return "Login mang raha hai — cookies lagao (IG_COOKIES_TXT, guide dekho)";
