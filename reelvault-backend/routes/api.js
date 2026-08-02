@@ -119,9 +119,11 @@ r.get("/api/diag", async (_req, res) => {
             detail: (d.error_description || "").slice(0, 160),
             meaning: /invalid_client/.test(d.error || "")
               ? "Client ID ya Client Secret galat hai"
-              : /invalid_grant/.test(d.error || "")
-                ? "Refresh token galat/revoked hai — ya Playground mein 'Use your own OAuth credentials' tick nahi tha"
-                : "network/other — dobara try karo",
+              : /unauthorized_client/.test(d.error || "")
+                ? "Client SECRET galat/mismatch hai — Cloud Console → Credentials → ReelVault Web → secret RESET karke naya paste karo"
+                : /invalid_grant/.test(d.error || "")
+                  ? "Refresh token galat/revoked hai — ya Playground mein 'Use your own OAuth credentials' tick nahi tha"
+                  : "network/other — dobara try karo",
           };
         }
       }

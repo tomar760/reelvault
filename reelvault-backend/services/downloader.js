@@ -155,7 +155,7 @@ function friendlyError(raw) {
 
 async function fetchMetadata(url) {
   if (!youtubedl) throw new Error("yt-dlp unavailable");
-  const info = await youtubedl(url, baseFlags({ dumpSingleJson: true }));
+  const info = await youtubedl(url, baseFlags({ dumpSingleJson: true, ignoreNoFormatsError: true }));
   return {
     title: (info.title || "Untitled video").toString().slice(0, 140),
     caption: (info.description || info.title || "").toString().slice(0, 600),
@@ -216,12 +216,15 @@ async function probe() {
   }
 }
 function diagInfo() {
+  let ffmpeg = false;
+  try { ffmpeg = !!(FFMPEG_PATH && fs.existsSync(FFMPEG_PATH)); } catch (e) {}
   return {
     ytVersion: activeVer,
     source: activeSrc,
     autoUpdate: updateState,
     cookies: !!cookiesFile,
     cookiesSource,
+    ffmpeg, // false ho toh "Clear build cache & deploy" karo
     maxFileMB: CFG.MAX_FILE_MB,
   };
 }
