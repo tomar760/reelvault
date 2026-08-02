@@ -192,6 +192,25 @@
 
   // LIVE MODE boot (runs before RVUI.init finishes page build)
   activate();
+
+  /* force the browser to look for the LATEST service worker — kills stale caches */
+  if ("serviceWorker" in navigator && navigator.serviceWorker.getRegistrations) {
+    navigator.serviceWorker.getRegistrations()
+      .then((rs) => rs.forEach((r) => { try { const p = r.update(); if (p && p.catch) p.catch(() => {}); } catch (_) {} }))
+      .catch(() => {});
+  }
+
+  /* ping health with patience — free Render sleeps and needs ~30-60s to wake */
+  async function pingHealth(maxTries, gapMs, onAttempt) {
+    let lastErr = new Error("no response");
+    for (let i = 1; i <= maxTries; i++) {
+      try { return await req("/api/health"); } catch (e) { lastErr = e; }
+      if (onAttempt) onAttempt(i, maxTries);
+      if (i < maxTries) await new Promise((r) => setTimeout(r, gapMs));
+    }
+    throw lastErr;
+  }
+
   document.addEventListener("DOMContentLoaded", () => {});
   const origInit = RVUI.init.bind(RVUI);
   RVUI.init = function (page) {
@@ -204,16 +223,29 @@
     if (st) st.innerHTML = '<span class="dot dot-amber"></span>Backend: syncing…';
     (async () => {
       try {
-        const health = await req("/api/health");
+        const health = await pingHealth(8, 8000, (i, n) => {
+          const stW = document.getElementById("rv-be-status");
+          if (stW) stW.innerHTML = `<span class="dot dot-amber"></span>Backend: waking up… (${i}/${n})`;
+        });
         await refreshCaches();
         paintChips(health);
+        window.RVRefresh && window.RVRefresh();
       } catch (e) {
         const st2 = document.getElementById("rv-be-status");
         if (st2) st2.innerHTML = '<span class="dot dot-red"></span>Backend: unreachable';
-        RVUI.toast("Backend unreachable — showing demo data. (" + e.message + ")", "err", 5200);
-        return;
+        RVUI.toast("Backend unreachable — will keep retrying quietly in the background.", "err", 5200);
+        /* self-heal: keep pinging every 30s; as soon as the backend wakes, flip to live */
+        const heal = setInterval(async () => {
+          try {
+            const health = await req("/api/health");
+            clearInterval(heal);
+            await refreshCaches().catch(() => {});
+            paintChips(health);
+            RVUI.toast("Backend connected — you're live ✓");
+            window.RVRefresh && window.RVRefresh();
+          } catch (_) { /* still asleep — try again in 30s */ }
+        }, 30000);
       }
-      window.RVRefresh && window.RVRefresh();
     })();
   };
 })();
