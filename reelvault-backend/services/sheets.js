@@ -45,8 +45,7 @@ async function ensureStructure() {
   const fHead = await getRange("Failed_Log!A1:G1");
   if (!fHead.length) await updateRange("Failed_Log!A1:G1", [[
     "Log_ID","Videos_SrNo","Fail_DateTime","Fail_Stage","Error_Message","Retry_Count","Resolved",
-  ]]);
-  const lists = await getRange("Lists_Settings!A1:D50");
+  ]]);  const lists = await getRange("Lists_Settings!A1:D50");
   if (!lists.length) {
     const rows = [["TOPIC_LIST", "RATING_LIST", "PLATFORM_LIST", "STATUS_LIST"]];
     const max = Math.max(TOPICS.length, RATINGS.length, PLATFORMS.length, 4);
@@ -119,6 +118,18 @@ async function logFailure(sr, stage, err, retryCount) {
   const t = todayParts();
   await appendRows("Failed_Log", [[id, sr, `${t.dateSheet} ${t.time}`, stage, String(err).slice(0, 180), String(retryCount), "No"]]);
 }
+/* read the FAILED LOG — newest first. This is where REAL error reasons live. */
+async function readFailures(limit = 25) {
+  const rows = await getRange("Failed_Log!A2:G5000");
+  return rows
+    .filter((r) => r[0])
+    .map((r) => ({
+      id: r[0], sr: r[1] || "", ts: r[2] || "", stage: r[3] || "",
+      error: r[4] || "", retries: parseInt(r[5] || "0", 10) || 0, resolved: (r[6] || "") === "Yes",
+    }))
+    .reverse()
+    .slice(0, limit);
+}
 
 /* ---------- lists ---------- */
 async function readLists() {
@@ -137,5 +148,5 @@ async function addTopic(label) {
 module.exports = {
   ensureStructure, readVideos, nextSrNo, findRowIndexBySr,
   addVideoRow, updateVideoRow, videoToRow, buildVideoObject,
-  addVaultRow, readVault, logFailure, readLists, addTopic,
+  addVaultRow, readVault, logFailure, readFailures, readLists, addTopic,
 };

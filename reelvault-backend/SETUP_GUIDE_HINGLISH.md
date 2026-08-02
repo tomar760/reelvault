@@ -214,3 +214,37 @@ Backend khud: download → Drive ke sahi folder → Sheet entry → dashboard up
 - [ ] Ek test link se video add karke dekha → Drive mein file + Sheet mein row ✅
 
 **Bas! Ab tumhara apna automatic video-vault zinda hai. 🚀**
+
+---
+
+## 🍪 COOKIES LAGANA (Download ka PERMANENT FIX) — 10 minute, sirf ek baar
+
+**Kyun?** Instagram/YouTube cloud servers (Render) ke IP address ko "bot" samajh kar video download rok dete hain. Cookies ka matlab: "main asli logged-in insaan hoon" ka saboot. Cookies lagate hi dono platform download karne lagenge.
+
+### Step A — Extension lagao (1 min)
+1. PC pe **Chrome/Edge** kholo.
+2. Chrome Web Store mein jao, search karo: **"Get cookies.txt LOCALLY"** (purple icon wali, made by "ccoreil" / Rahul Shaw — 5 lakh+ users). Ya seedha ye likho address mein: `chrome web store get cookies.txt locally`
+3. **Add to Chrome** dabao → **Add extension** confirm.
+
+### Step B — Instagram pe login + export (2 min)
+1. Naye tab mein **instagram.com** kholo → apne account se **log in** karo (agar pehle se logged in ho toh bhi chalega).
+2. Usi Instagram tab pe rehte hue, upar-right **puzzle icon 🧩 (Extensions)** dabao → **"Get cookies.txt LOCALLY"** pe click.
+3. **Export** / **Download** button dabao → ek file download hogi: `instagram.com_cookies.txt`.
+
+### Step C — Render pe paste karo (3 min)
+1. Downloaded file ko **Notepad** mein kholo (file pe right-click → Open with → Notepad).
+2. **Ctrl + A** (sab select) → **Ctrl + C** (copy).
+3. **render.com → reelvault (tumhara Web Service) → Environment** tab.
+4. **Add Environment Variable** dabao:
+   - **Key**: `IG_COOKIES_TXT`
+   - **Value**: **Ctrl + V** se poora content paste karo (multiline chalega — chinta mat karo).
+5. **Save Changes** dabao → Render khud **redeploy** shuru kar dega (2–3 min ruko).
+
+### Step D — Test karo (1 min)
+1. App kholo → **Settings → ▶ Run self-test** → ab **PASS** dikhna chahiye + `cookies: true (IG_COOKIES_TXT)`.
+2. Failed videos pe **Retry** dabao (ya AI chat mein bolo "retry karo") → Done hote dikhenge. ✅
+
+### FAQs
+- **YouTube videos bhi fail ho rahe?** Wahi process **youtube.com** pe login karke dohrao — nikalne wali file ka content Notepad mein Instagram wale ke **neeche jod do (append)**, phir dono ka mila content ek saath `IG_COOKIES_TXT` mein paste karo. (Header line `# Netscape HTTP Cookie File...` sirf ek baar upar rahe — doosri file ki header hata dena.)
+- **Cookies kitne din chalti hain?** Instagram ki cookies hafton-chale; agar kabhi phir "login required" aane lage toh Step B–C dohra do (fresh export → paste → save).
+- **Khatra?** Ye cookies sirf tumhare apne Render server pe rehti hain — par phir bhi kisi ko mat bhejna. Apna kaam ho jaye toh chaaho toh Instagram mein kuch nahi karna — cookies mein password hota hi nahi.

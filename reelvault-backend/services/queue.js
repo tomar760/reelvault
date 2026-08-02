@@ -185,6 +185,7 @@ async function failJob(job, stage, err) {
       const v = all.find((x) => x.Sr_No === job.srNo);
       if (v) {
         v.Download_Status = "Failed";
+        v.Notes = ("[" + stage + "] " + msg).slice(0, 180); // real reason visible everywhere
         v.Last_Modified = todayParts().stamp;
         await sheets.updateVideoRow(job.rowIndex, await sheets.videoToRow(v));
       }
@@ -214,6 +215,7 @@ async function sweepStaleOnBoot() {
       const rowIndex = await sheets.findRowIndexBySr(v.Sr_No);
       if (rowIndex < 0) continue;
       v.Download_Status = "Failed";
+      v.Notes = "[restart] Instance restarted/slept mid-job — press Retry";
       v.Last_Modified = todayParts().stamp;
       await sheets.updateVideoRow(rowIndex, await sheets.videoToRow(v));
       await sheets.logFailure(v.Sr_No, "restart", "Instance restarted/slept mid-job — marked failed (use Retry)", 0);

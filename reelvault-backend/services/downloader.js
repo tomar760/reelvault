@@ -92,13 +92,26 @@ async function ensureLatestYtDlp() {
 }
 refreshActiveVersion();
 
-/* ---------- optional cookies for stubborn platforms ---------- */
-let cookiesFile = null;
-if (process.env.IG_COOKIES_BASE64) {
+/* ---------- optional cookies for stubborn platforms ----------
+   IG_COOKIES_TXT  → seedha cookies.txt ka CONTENT paste karo (sabse aasan)
+   IG_COOKIES_BASE64 → purana tareeka (base64 string) */
+let cookiesFile = null, cookiesSource = "";
+function saveCookies(text, label) {
   try {
-    cookiesFile = "/tmp/rv_cookies.txt";
-    fs.writeFileSync(cookiesFile, Buffer.from(process.env.IG_COOKIES_BASE64, "base64"));
-  } catch (e) { console.error("cookies decode failed", e.message); cookiesFile = null; }
+    const t = String(text || "");
+    if (!/Netscape HTTP Cookie File/i.test(t) && !/\.(instagram|facebook|google|youtube|fb)\.[\w.\-]*\t/i.test(t)) {
+      console.error(`${label}: yeh cookies.txt (Netscape) format nahi lagta — extension se export kiya hua file ka poora content paste karo`);
+      return;
+    }
+    cookiesFile = "/tmp/rv_cookies.txt"; cookiesSource = label;
+    fs.writeFileSync(cookiesFile, t);
+    console.log(`🍪 cookies loaded from ${label}`);
+  } catch (e) { console.error("cookies save failed", e.message); cookiesFile = null; cookiesSource = ""; }
+}
+if (process.env.IG_COOKIES_TXT) saveCookies(process.env.IG_COOKIES_TXT, "IG_COOKIES_TXT");
+else if (process.env.IG_COOKIES_BASE64) {
+  try { saveCookies(Buffer.from(process.env.IG_COOKIES_BASE64, "base64").toString("utf8"), "IG_COOKIES_BASE64"); }
+  catch (e) { console.error("cookies decode failed", e.message); }
 }
 
 /* ---------- hardened default flags ---------- */
@@ -125,8 +138,9 @@ function detectPlatform(url) {
 /* ---------- friendly error mapping ---------- */
 function friendlyError(raw) {
   const msg = String(raw || "");
+  if (/sign in to confirm|not a bot|bot.?check|consent|challenge/i.test(msg)) return "YouTube/Instagram ne server ko bot samajh liya — cookies lagao (IG_COOKIES_TXT, guide dekho)";
   if (/rate.?limit|429|too many requests/i.test(msg)) return "Instagram rate-limit — thodi der baad Retry karo (ya IG_COOKIES lagao)";
-  if (/login|required|private|403/i.test(msg)) return "Login mang raha hai — IG_COOKIES_BASE64 lagao (guide dekho)";
+  if (/login|required|private|403/i.test(msg)) return "Login mang raha hai — cookies lagao (IG_COOKIES_TXT, guide dekho)";
   if (/Unsupported/i.test(msg)) return "Unsupported link / platform";
   if (/Version of|parse|extract|unable to extract/i.test(msg)) return "Platform ne page badal diya — server restart pe yt-dlp auto-update hoga, thodi der baad Retry karo";
   if (/max-filesize|File is larger/i.test(msg)) return "Video too large (limit cross)";
@@ -190,7 +204,9 @@ async function probe() {
     const m = await fetchMetadata(PROBE_URL);
     return { ok: true, title: m.title, duration: m.duration, tookMs: Date.now() - t0 };
   } catch (e) {
-    return { ok: false, error: String(e.message || e).slice(0, 200), tookMs: Date.now() - t0 };
+    const raw = String((e && (e.stderr || e.shortMessage)) || (e && e.message) || e);
+    const errLine = (raw.match(/ERROR:[^\n]*/m) || [raw.split("\n").filter(Boolean).pop() || raw])[0] || raw;
+    return { ok: false, error: errLine.slice(0, 240), tookMs: Date.now() - t0 };
   }
 }
 function diagInfo() {
@@ -199,6 +215,7 @@ function diagInfo() {
     source: activeSrc,
     autoUpdate: updateState,
     cookies: !!cookiesFile,
+    cookiesSource,
     maxFileMB: CFG.MAX_FILE_MB,
   };
 }

@@ -43,6 +43,8 @@ function sheetToJSON(v) {
     fileName: v.File_Name || "",
     driveLink: v.Drive_File_Link || "",
     thumb: v.Thumbnail_Link || "",
+    failReason: v.Notes || "",
+    retryCount: 0,
   };
 }
 
@@ -103,8 +105,17 @@ r.post("/api/chat", async (req, res) => {
     let ctx = "";
     try {
       const vs = await sheets.readVideos();
-      const done = vs.filter((x) => x.Download_Status === "Done").length;
-      ctx = `Total videos saved: ${vs.length}, Done: ${done}, Failed: ${vs.filter((x) => x.Download_Status === "Failed").length}, Pending: ${vs.filter((x) => x.Download_Status === "Pending").length}`;
+      const doneArr = vs.filter((x) => x.Download_Status === "Done");
+      const usedGB = doneArr.reduce((s, x) => s + (parseFloat(x.File_Size_MB) || 0), 0) / 1024;
+      const fails = await sheets.readFailures(6).catch(() => []);
+      const failLines = fails.map((f) => `• Sr ${f.sr} — [${f.stage}] ${f.error} (${f.ts})`).join("\n");
+      ctx = [
+        `Total videos saved: ${vs.length}, Done: ${doneArr.length}, Failed: ${vs.filter((x) => x.Download_Status === "Failed").length}, Pending: ${vs.filter((x) => x.Download_Status === "Pending").length}.`,
+        `Google Drive storage: ${usedGB.toFixed(1)} GB used out of 15 GB free — storage is ${usedGB < 13 ? "NOT full (plenty free)" : "ALMOST FULL"}.`,
+        fails.length
+          ? `REAL failure reasons from Failed_Log (quote these exactly, never invent other reasons):\n${failLines}`
+          : "Failed_Log is empty — no recorded failure reasons.",
+      ].join("\n");
     } catch {}
     const reply = await nim.chat(messages, ctx);
     if (!reply) return res.json({ ok: true, reply: null, fallback: true });
@@ -134,10 +145,26 @@ r.get("/api/status/:jobId", (req, res) => {
   res.json({ ok: true, job: j });
 });
 
+/* ---------- failed log (REAL reasons — AI/chat/dashboard read these) ---------- */
+r.get("/api/failures", async (_req, res) => {
+  try { res.json({ ok: true, failures: await sheets.readFailures(25) }); }
+  catch (e) { fail(res, e); }
+});
+
 /* ---------- library ---------- */
 r.get("/api/library", async (req, res) => {
   try {
     let vs = (await sheets.readVideos()).map(sheetToJSON).sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+    /* attach real failure reasons from Failed_Log where the row's Notes column is empty */
+    try {
+      const need = vs.some((v) => (v.status === "Failed" || v.status === "Retrying") && !v.failReason);
+      if (need) {
+        const logs = await sheets.readFailures(60); // newest first
+        const bySr = {};
+        logs.forEach((l) => { if (l.sr && !bySr[l.sr]) bySr[l.sr] = l; });
+        vs = vs.map((v) => (v.failReason || !bySr[v.sr] ? v : { ...v, failReason: `[${bySr[v.sr].stage}] ${bySr[v.sr].error}`, retryCount: bySr[v.sr].retries }));
+      }
+    } catch (_) { /* log tab missing — rows just show blank reason */ }
     const { q, topic, rating, platform, status, wf } = req.query;
     if (q) { const s = q.toLowerCase(); vs = vs.filter((v) => [v.title, v.remarks, v.fileName, v.link, v.tags.join(" ")].join(" ").toLowerCase().includes(s)); }
     if (topic) vs = vs.filter((v) => v.topicKey === topic);

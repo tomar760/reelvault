@@ -1,6 +1,6 @@
 /* ReelVault — Service Worker (PWA offline shell)
    v5-2: NEVER touch API/cross-origin calls — only cache our own site files. */
-const CACHE = "reelvault-v5-2";
+const CACHE = "reelvault-v5-3";
 const ASSETS = [
   "./", "index.html", "library.html", "vault.html", "analytics.html", "activity.html", "settings.html",
   "css/style.css",

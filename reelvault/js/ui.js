@@ -684,6 +684,25 @@
         setTimeout(() => (location.href = f), 900);
         return `➡️ ${pg[1][0].toUpperCase() + pg[1].slice(1)} khol raha hoon…`;
       }
+      /* ---- 5b. WHY failed / Drive storage — REAL reasons from Failed_Log (no guessing!) ---- */
+      if (/kyun|why|reason|fail|storage|drive full|space|error|nahi ho rahi|nahi ho raha/.test(low) && !/retry/.test(low)) {
+        if (!(window.RV_API && RV_API.isLive && RV_API.isLive())) return "Abhi DEMO mode mein hoon — real reasons tabhi dikha sakta hoon jab backend juda ho.";
+        try {
+          const fj = await RV_API.req("/api/failures");
+          const fails = (fj.failures || []).slice(0, 4);
+          const st = RVData.stats();
+          const driveLine = `📦 Drive: ${st.driveGB}/15 GB used — storage full nahi hai, tension mat lo. ✅`;
+          if (!fails.length) return `Failed_Log bilkul khali hai — koi failure record nahi mila! 🎉\n${driveLine}`;
+          const tipFor = (s) => /login|cookies|private|sign in/i.test(s) ? "💡 Instagram login/cookies maang raha hai → Render pe IG_COOKIES_BASE64 lagao (Setup guide mein steps hain), ya public reel se try karo."
+            : /rate.?limit|429|too many/i.test(s) ? "💡 Instagram ne temporarily rate-limit kiya → 15–20 min baad mujhe 'retry karo' bol dena."
+            : /restart|slept|sweep/i.test(s) ? "💡 Server beech mein so gaya tha → bas 'retry karo' bol do, main queue mein daal dunga."
+            : /unsupported|404|not found|removed|unavailable/i.test(s) ? "💡 Video private ya delete ho chuka lagta hai → link browser mein khul raha hai ya nahi, check karo."
+            : /update|extract|parse|unable/i.test(s) ? "💡 Downloader ko refresh chahiye → Render pe 'Clear build cache & deploy' karo (boot pe yt-dlp auto-update ho jayega)."
+            : "💡 'retry karo' bol do, ya Activity page se Retry now dabao.";
+          const lines = fails.map((f) => `• Sr ${f.sr} — ${f.error}${f.stage ? ` (stage: ${f.stage})` : ""}`);
+          return `Asli reasons — Failed_Log se, koi guess nahi 👇\n${lines.join("\n")}\n\n${tipFor((fails[0].error || "") + " " + (fails[0].stage || ""))}\n${driveLine}\n\nBolo \"retry karo\" — main failed videos turant fir se queue mein daal dunga. 🔄`;
+        } catch (e) { return "Failed_Log abhi nahi khul pa raha: " + e.message; }
+      }
       /* ---- 6. AI (NIM) ya local fallback ---- */
       try {
         if (window.RV_API && RV_API.chat) {
@@ -695,7 +714,7 @@
       if (/kitne|how many|total|count/.test(low)) return `Vault mein abhi **${st.total} videos** — is week ${st.week}, Very Useful ${st.high}, Failed/Pending ${st.failed}.`;
       if (/fail|error|pending/.test(low)) return `Failed/Pending: **${st.failed}**. Bolo "retry karo" — main khud retry daal dunga. Ya Activity page open karo.`;
       if (/workflow|vault/.test(low)) return `Vault tab mein **${st.workflows} workflows/resources** hain jo influencers se mile.`;
-      if (/help|kya kar sakte|what can/.test(low)) return "Main ye kar sakta hoon:\n• Link bhejo → download kar deta hoon (Drive + Sheet auto)\n• \"retry karo\" → failed videos retry\n• \"excel do\" → export\n• \"dark/light\" → theme change\n• \"kitne videos?\" → stats\n• \"library kholo\" → page navigation";
+      if (/help|kya kar sakte|what can/.test(low)) return "Main ye kar sakta hoon:\n• Link bhejo → download kar deta hoon (Drive + Sheet auto)\n• \"fail kyun hui?\" → Failed_Log se ASLI reason batata hoon (koi guess nahi)\n• \"retry karo\" → failed videos retry\n• \"excel do\" → export\n• \"dark/light\" → theme change\n• \"kitne videos?\" → stats\n• \"library kholo\" → page navigation";
       return "Samjha nahi poori tarah — par ye bolo: video ka **link** bhejo (main download kar dunga), ya **help** likho sab commands ke liye. 🙂";
     }
     form.addEventListener("submit", async (e) => {
