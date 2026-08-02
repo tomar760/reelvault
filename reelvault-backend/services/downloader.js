@@ -116,6 +116,10 @@ else if (process.env.IG_COOKIES_BASE64) {
 
 /* ---------- hardened default flags ---------- */
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+/* Render pe ffmpeg nahi hota — bina iske YouTube ke split streams "Requested format is not available" dete hain.
+   ffmpeg-static npm package apna binary saath lata hai → merge hamesha possible. */
+let FFMPEG_PATH = null;
+try { FFMPEG_PATH = require("ffmpeg-static"); } catch (e) { console.error("ffmpeg-static missing:", e.message); }
 function baseFlags(extra = {}) {
   const f = {
     noPlaylist: true, noWarnings: true,
@@ -123,6 +127,7 @@ function baseFlags(extra = {}) {
     socketTimeout: 25, retries: 3, fragmentRetries: 3,
     ...extra,
   };
+  if (FFMPEG_PATH) f.ffmpegLocation = FFMPEG_PATH;
   if (cookiesFile) f.cookies = cookiesFile;
   return f;
 }
@@ -173,7 +178,7 @@ function downloadVideo(url, outDir, onProgress) {
     const outTpl = path.join(outDir, "rv_video.%(ext)s");
     const flags = baseFlags({
       output: outTpl,
-      format: "best[ext=mp4]/best",
+      format: "bv*[height<=1080]+ba/b[height<=1080][ext=mp4]/b[ext=mp4]/b/best",
       maxFilesize: CFG.MAX_FILE_MB + "M",
       mergeOutputFormat: "mp4",
       newline: true,

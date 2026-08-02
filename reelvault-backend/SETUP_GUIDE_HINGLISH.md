@@ -306,3 +306,19 @@ Backend khud: download → Drive ke sahi folder → Sheet entry → dashboard up
 2. Failed videos pe **Retry** (ya AI chat: "retry karo") → download + upload dono DONE! 🎉
 
 **Notes:** Refresh token mein password nahi hota; wo sirf tumhara ReelVault backend use karta hai. Gmail password badloge toh naya token nikalna padega (Step 7–8 dohrao).
+
+---
+
+## 🔧 "invalid_grant" aaye toh (Google token reject kar raha hai)
+
+Matlab: 3 OAuth values mein se **koi ek galat paste hui** hai. Ye checklist follow karo:
+
+1. **Playground wala tick** — sabse common galti! OAuth Playground ke ⚙️ settings mein **"Use your own OAuth credentials" tick karke apna Client ID + Secret daalna zaroori hai**, aur **uske BAAD HI** "Authorize APIs" dabana hai. Tick kiye bina token banaya toh wo playground ke client ka hoga → tumhare ID/secret ke saath `invalid_grant`.
+2. **Pehchan ke nishaan:**
+   - Client ID → `…apps.googleusercontent.com` pe **khatam** hota hai
+   - Client Secret → `GOCSPX-` se **shuru** hota hai
+   - Refresh Token → `1//` se **shuru** hota hai (Copy button se copy karo — haath se select karne pe aadha reh jata hai)
+3. **Spaces/newlines** — Render env mein paste karte waqt value ke aage-peeche space/enter nahi hona chahiye.
+4. **Authorization code ≠ Refresh token** — Playground ke Step 2 ka **"Exchange authorization code for tokens"** dabane ke BAAD jo "Refresh token" dikhta hai, wahi copy karna hai (upar wala code nahi).
+5. Naya token dobara chahiye toh **Step 7 (Playground) poora repeat** karo → naya refresh token → Render mein replace → Save.
+6. Self-test (`/api/diag`) ab khud batayega: `oauthCheck.meaning` mein exact wajah (client galat ya token galat).

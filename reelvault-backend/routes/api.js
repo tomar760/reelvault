@@ -93,11 +93,42 @@ r.get("/api/diag", async (_req, res) => {
   try {
     const dl = require("../services/downloader");
     const p = await dl.probe();
-    let driveMode = "unknown";
-    try { driveMode = require("../services/google").driveClient().mode; } catch (e) { driveMode = "error: " + e.message.slice(0, 80); }
+    let driveMode = "unknown", oauthCheck = null, oauthEnv = null;
+    try {
+      driveMode = require("../services/google").driveClient().mode;
+      if (driveMode === "oauth-user") {
+        const { google } = require("googleapis");
+        const o = new google.auth.OAuth2(CFG.OAUTH_CLIENT_ID, CFG.OAUTH_CLIENT_SECRET);
+        o.setCredentials({ refresh_token: CFG.OAUTH_REFRESH_TOKEN });
+        /* masked fingerprints — sirf shuru/aakhir ke characters (paste galti pakadne ke liye) */
+        const mask = (s, a, b) => (s && s.length > a + b ? `${s.slice(0, a)}…${s.slice(-b)}` : "(too short)");
+        oauthEnv = {
+          clientIdEnds: (CFG.OAUTH_CLIENT_ID || "").slice(-27), // hona chahiye: …apps.googleusercontent.com
+          secretStarts: (CFG.OAUTH_CLIENT_SECRET || "").slice(0, 7),  // hona chahiye: GOCSPX-
+          refreshStarts: (CFG.OAUTH_REFRESH_TOKEN || "").slice(0, 4), // hona chahiye: 1//
+          maskNote: mask(CFG.OAUTH_REFRESH_TOKEN, 3, 4),
+        };
+        try {
+          await o.getAccessToken(); // asli refresh try — Google ka exact jawab
+          oauthCheck = { ok: true };
+        } catch (e) {
+          const d = (e.response && e.response.data) || {};
+          oauthCheck = {
+            ok: false,
+            error: d.error || e.message.slice(0, 60),
+            detail: (d.error_description || "").slice(0, 160),
+            meaning: /invalid_client/.test(d.error || "")
+              ? "Client ID ya Client Secret galat hai"
+              : /invalid_grant/.test(d.error || "")
+                ? "Refresh token galat/revoked hai — ya Playground mein 'Use your own OAuth credentials' tick nahi tha"
+                : "network/other — dobara try karo",
+          };
+        }
+      }
+    } catch (e) { driveMode = "error: " + e.message.slice(0, 80); }
     res.json({
       ok: true, ...dl.diagInfo(), nimConfigured: !!CFG.NIM_KEY, probe: p,
-      driveMode,
+      driveMode, oauthCheck, oauthEnv,
       driveHint: driveMode === "oauth-user"
         ? "Uploads tumhaare apne account + 15GB se honge ✓"
         : "Google (2025) service-account uploads BLOCK karta hai — 3 OAuth vars set karo (guide: DRIVE OAUTH chapter)",
