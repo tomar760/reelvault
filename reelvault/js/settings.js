@@ -130,6 +130,36 @@
     });
     loadAIStats();
 
+    /* ---- download self-test ---- */
+    const dgBtn = $("#diag-run");
+    dgBtn && dgBtn.addEventListener("click", async () => {
+      const line = $("#diag-line"), tag = $("#diag-tag");
+      if (!(window.RV_API && RV_API.isLive && RV_API.isLive())) {
+        line.innerHTML = "Backend connect nahi hai — pehle upar backend URL + passcode se connect karo, phir self-test chalega.";
+        return;
+      }
+      dgBtn.disabled = true; dgBtn.textContent = "Testing… (~10-15 sec)";
+      if (tag) tag.textContent = "RUNNING";
+      line.innerHTML = "⏳ Server pe engine test chal raha hai — ek chhoti public video ki metadata fetch ho rahi hai…";
+      try {
+        const d = await RV_API.req("/api/diag");
+        const parts = [];
+        parts.push(`<b>yt-dlp:</b> ${d.ytVersion} ${d.autoUpdate && d.autoUpdate.ok ? "· auto-update ✓" : ""}`);
+        parts.push(`<b>Engine test:</b> ${d.probe.ok ? "✅ PASS — <i>" + esc(d.probe.title.slice(0, 60)) + "</i> (" + d.probe.tookMs + "ms)" : "❌ FAIL — " + esc(d.probe.error || "")}`);
+        parts.push(`<b>IG cookies:</b> ${d.cookies ? "✅ lagai hui" : "⚠️ nahi hai — private reels fail hongi"}`);
+        parts.push(`<b>AI key:</b> ${d.nimConfigured ? "✅" : "⚠️ local mode"}`);
+        line.innerHTML = parts.map((x) => '<small style="display:block;margin:3px 0">' + x + "</small>").join("");
+        if (tag) tag.textContent = d.probe.ok ? "PASS ✓" : "FAIL";
+        if (!d.probe.ok) {
+          line.innerHTML += '<small style="display:block;margin-top:6px;color:var(--red)">💡 Render dashboard → Manual Deploy → <b>"Clear build cache & deploy"</b> karo — naya yt-dlp auto-download hoga boot pe. Phir 2 min baad ye test dobara chalao.</small>';
+        }
+      } catch (e) {
+        line.innerHTML = "❌ Self-test fail: " + esc(e.message) + ' — <small>server so raha hai? 30-60 sec baad dobara dabao.</small>';
+        if (tag) tag.textContent = "ERROR";
+      }
+      dgBtn.disabled = false; dgBtn.textContent = "▶ Run self-test";
+    });
+
       if (RVUI.tryInstall()) return;
       RVUI.openModal(`
         <h2>Install ReelVault on your phone</h2>

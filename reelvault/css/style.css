@@ -589,3 +589,28 @@ main.page {
 /* mini buttons jo primary hain — gradient preserve karo */
 .btn.btn-mini.btn-primary { background: var(--grad-btn); color: #fff; }
 .btn.btn-mini.btn-export { background: var(--grad-export); color: #3a2403; }
+
+/* ---- v3c — collapsed module = clean app-style row ---- */
+@media (max-width: 999px) {
+  .dash { gap: 9px; }
+  .dash .mod { border-radius: 15px; position: relative; overflow: hidden; }
+  .dash .mod.mod-collapsed {
+    border: 1px solid var(--line); box-shadow: none;
+    background: var(--card);
+  }
+  .dash .mod.mod-collapsed .mod-h { margin: 0; padding: 2px 0; border: none; }
+  .dash .mod .mod-h h3 { font-size: 14.5px; }
+  .dash .mod-collapsed .mod-h .tag { order: 3; font-size: 9px; opacity: .65; margin-left: 0; }
+  .dash .mod-collapsed .mod-chev { margin-left: auto; }
+}
+
+/* expand-all mini button (dashboard head) */
+#rv-expand-all {
+  font: 600 11px var(--font-b); color: var(--violet);
+  border: 1px solid var(--line); background: var(--card);
+  padding: 6px 12px; border-radius: 99px; cursor: pointer;
+}
+@media (min-width: 1000px) { #rv-expand-all { display: none; } }
+
+/* diag self-test line */
+#diag-card small { display: block; }

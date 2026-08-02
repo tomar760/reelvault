@@ -86,6 +86,15 @@ r.get("/api/aistats", async (_req, res) => {
   } catch (e) { fail(res, e); }
 });
 
+/* ---------- download self-test + diagnostics (waqf download fail ho toh) ---------- */
+r.get("/api/diag", async (_req, res) => {
+  try {
+    const dl = require("../services/downloader");
+    const p = await dl.probe();
+    res.json({ ok: true, ...dl.diagInfo(), nimConfigured: !!CFG.NIM_KEY, probe: p, time: new Date().toISOString() });
+  } catch (e) { fail(res, e); }
+});
+
 /* ---------- AI chat (dashboard chatbot) ---------- */
 r.post("/api/chat", async (req, res) => {
   try {

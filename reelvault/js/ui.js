@@ -122,7 +122,7 @@
     const main5 = NAV.filter((n) => ["dashboard","library","vault","analytics","activity","settings"].includes(n.id));
     bnav.innerHTML =
       main5.slice(0, 2).map(mkBN).join("") +
-      `<button class="bn-fab js-quickadd" aria-label="Quick Add"><span>＋</span></button>` +
+      `<button class="bn-fab js-quickadd" aria-label="Quick Add"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3.1" stroke-linecap="round"><line x1="12" y1="5.6" x2="12" y2="18.4"/><line x1="5.6" y1="12" x2="18.4" y2="12"/></svg></button>` +
       main5.slice(2).map(mkBN).join("");
     function mkBN(n) { return `<a href="${n.href}" class="bn-link ${n.id === page ? "active" : ""}"><span class="bn-ic">${n.icon}</span><small>${n.label}</small></a>`; }
     document.body.appendChild(bnav);
@@ -539,12 +539,33 @@
       apply(collapsed);
       h.addEventListener("click", (e) => {
         if (e.target.closest("button, a, input, select, textarea, form")) return;
-        collapsed = !collapsed;
+        collapsed = !m.classList.contains("mod-collapsed"); /* real class se toggle — expand-all se kabhi sync nahi tutti */
         apply(collapsed);
         saved[key] = collapsed;
         try { localStorage.setItem("rv_modc", JSON.stringify(saved)); } catch (_) {}
       });
     });
+    /* Expand/Collapse-all chip (phone pe dashboard saaf-suthra rahe) */
+    const head = document.querySelector(".page-head");
+    if (head && !document.getElementById("rv-expand-all")) {
+      const btn = document.createElement("button");
+      btn.id = "rv-expand-all"; btn.type = "button";
+      const syncLabel = () => {
+        const anyOpen = !!document.querySelector(".dash .mod:not(.mod-collapsed)");
+        btn.textContent = anyOpen ? "⊟ Collapse all" : "⊞ Expand all";
+      };
+      btn.textContent = "⊞ Expand all";
+      btn.addEventListener("click", () => {
+        const anyOpen = !!document.querySelector(".dash .mod:not(.mod-collapsed)");
+        document.querySelectorAll(".dash .mod").forEach((m) => m.classList.toggle("mod-collapsed", anyOpen));
+        Object.keys(saved).forEach((k) => (saved[k] = anyOpen));
+        try { localStorage.setItem("rv_modc", JSON.stringify(saved)); } catch (_) {}
+        syncLabel();
+      });
+      head.appendChild(btn);
+      document.addEventListener("click", (e) => { if (e.target.closest(".mod-h.collapse-head")) setTimeout(syncLabel, 60); });
+      setTimeout(syncLabel, 300);
+    }
   }
 
   /* ---------------- AI chat widget ---------------- */
@@ -569,7 +590,7 @@
     const fab = wrap.querySelector("#aichat-fab"), panel = wrap.querySelector("#aichat-panel"),
           body = wrap.querySelector("#aichat-body"), form = wrap.querySelector("#aichat-form"),
           inp = wrap.querySelector("#aichat-inp");
-    const hist = [{ role: "assistant", content: "Hi! I am ReelVault AI. Ask me anything about your vault \u2014 downloads, topics, workflows, or troubleshooting. \u2726" }];
+    const hist = [{ role: "assistant", content: "Hi! I am ReelVault AI \u2014 ab main sirf jawab nahi, KAAM bhi karta hoon! Video ka link bhejo aur main download kar dunga. \u2018help\u2019 likh \u2014 sab commands dikhata hoon \u2726" }];
     const OPEN_KEY = "rv_aichat_open";
     const paint = () => {
       body.innerHTML = hist.map((m) => `<div class="aichat-msg ${m.role}">${esc(m.content)}</div>`).join("");
@@ -583,32 +604,113 @@
     };
     fab.addEventListener("click", () => setOpen(true));
     wrap.querySelector("#aichat-close").addEventListener("click", () => setOpen(false));
+    async function agentRespond(q, thinking) {
+      const low = q.toLowerCase();
+      /* ---- 1. URL commands → REAL download ---- */
+      const m = q.match(/(https?:\/\/[^\s]+)/i) || q.match(/\b((?:www\.)?(?:instagram\.com|facebook\.com|fb\.watch|youtube\.com|youtu\.be|twitter\.com|x\.com)[^\s]*)/i);
+      if (m) {
+        let url = m[1] || m[0];
+        if (!/^https?:\/\//i.test(url)) url = "https://" + url.replace(/^www\./, "");
+        if (!(window.RV_API && RV_API.isLive && RV_API.isLive())) {
+          return "Link mil gaya, lekin abhi DEMO mode mein hoon — backend connect karo (Settings → Backend Connection), phir main ise sahi mein download kar sakta hoon. 🔌";
+        }
+        const plat = detectPlatform(url);
+        return await new Promise((resolve) => {
+          let lastLabel = "", done = false;
+          thinking.content = `🚀 ${plat} video download shuru kar raha hoon…`;
+          const hooks = {
+            onStage: (st) => {
+              if (done) return;
+              lastLabel = st.label || lastLabel;
+              if (!st.done) {
+                thinking.content = `⏳ ${st.label || "Working…"}${st.pct != null && st.pct < 100 ? ` · ${st.pct}%` : ""}${st.sub ? "\n" + st.sub : ""}`;
+                paint();
+              }
+            },
+            onDone: (r) => {
+              done = true;
+              if (r && r.failed) {
+                const err = r.error || "unknown error";
+                const tip = /login|cookies/i.test(err) ? "Instagram login maang raha hai — Render pe IG_COOKIES_BASE64 lagao (guide mein steps hain), ya public reel try karo."
+                  : /rate.?limit/i.test(err) ? "Instagram ne thodi der ke liye block kiya — 15-20 min baad bolna 'retry karo'."
+                  : /update|extract|badal/i.test(err) ? "Server restart hone pe yt-dlp auto-update hota hai — Render pe Manual Deploy → 'Clear build cache & deploy' karo, phir bolo."
+                  : /duplicate/i.test(err) ? "Ye video pehle se saved hai — Library mein search karo."
+                  : "Activity page → Retry now bhi daba sakte ho.";
+                resolve(`❌ Download nahi ho paya.\nReason: ${err}\n\n💡 ${tip}`);
+              } else {
+                navigator.vibrate && navigator.vibrate([20, 40, 20]);
+                resolve(`✅ Ho gaya! Video download ho kar Drive mein save ho gaya, Sheet mein bhi entry ho gayi. 🎉\nSr. No. ${(r && r.sr) || "—"} ${r && r.fileName ? "· " + r.fileName : ""}\nLibrary mein ab dikhega.`);
+              }
+              window.RVRefresh && window.RVRefresh();
+            },
+          };
+          try {
+            RVUI.simulateAdd({ link: url, topicKey: null, ratingKey: "high", workflow: false, vaultName: "", vaultType: "link", influencer: "", remarks: "Added via AI chat", src: "AI Chat", title: "", platform: plat }, hooks);
+          } catch (err) { resolve("❌ Download start nahi hua: " + err.message); }
+          /* safety timeout — 4 min */
+          setTimeout(() => { if (!done) { resolve("⏱ Download abhi bhi chal raha hai (server slow hai). Dashboard ke 'Live Download Status' mein dekho — complete hote hi Library update ho jayegi."); } }, 240000);
+        });
+      }
+      /* ---- 2. Retry commands ---- */
+      if (/retry|fir se|dobara try/.test(low) && !/excel|chat/.test(low)) {
+        const failed = (RVData.allVideos() || []).filter((v) => v.status === "Failed");
+        if (!failed.length) return "Abhi koi Failed video nahi hai — sab clear hai! 🎉";
+        if (!(window.RV_API && RV_API.isLive && RV_API.isLive())) return "Backend connect nahi hai — demo mode mein retry possible nahi.";
+        let n = 0;
+        for (const v of failed.slice(0, 5)) {
+          try { await RV_API.req(`/api/retry/${v.sr}`, { method: "POST", body: "{}" }); n++; } catch (_) {}
+        }
+        setTimeout(() => window.RVRefresh && window.RVRefresh(), 2000);
+        return `🔄 ${n} failed video${n === 1 ? "" : "s"} retry queue mein daal diye. 20-40 sec mein Activity page pe result dikhega.`;
+      }
+      /* ---- 3. Excel ---- */
+      if (/excel|export|sheet download/.test(low)) {
+        RVUI.exportExcel();
+        return "📊 Excel export shuru ho gaya — colourful wali file abhi download hogi. Aur kuch?";
+      }
+      /* ---- 4. Theme ---- */
+      if (/dark|light|theme/.test(low)) {
+        const cur = localStorage.getItem("rv_theme") || "light";
+        const want = /dark/.test(low) ? "dark" : (/light/.test(low) ? "light" : (cur === "dark" ? "light" : "dark"));
+        localStorage.setItem("rv_theme", want);
+        applyTheme();
+        return want === "dark" ? "🌙 Matcha Ink (dark) laga diya. Raat ko aankhein aram se!" : "☀️ Matcha Paper (light) laga diya. Fresh feel!";
+      }
+      /* ---- 5. Open pages ---- */
+      const pg = low.match(/(?:open|kholo| dikhao| dikha)\s*(library|vault|activity|settings|insights|analytics|dashboard)/);
+      if (pg) {
+        const map = { library: "library.html", vault: "vault.html", activity: "activity.html", settings: "settings.html", insights: "analytics.html", analytics: "analytics.html", dashboard: "index.html" };
+        const f = map[pg[1]];
+        setTimeout(() => (location.href = f), 900);
+        return `➡️ ${pg[1][0].toUpperCase() + pg[1].slice(1)} khol raha hoon…`;
+      }
+      /* ---- 6. AI (NIM) ya local fallback ---- */
+      try {
+        if (window.RV_API && RV_API.chat) {
+          const r = await RV_API.chat([...hist.filter((x) => x !== thinking).slice(-10), { role: "user", content: q }]);
+          if (r && r.reply) return r.reply;
+        }
+      } catch (_) {}
+      const st = RVData.stats();
+      if (/kitne|how many|total|count/.test(low)) return `Vault mein abhi **${st.total} videos** — is week ${st.week}, Very Useful ${st.high}, Failed/Pending ${st.failed}.`;
+      if (/fail|error|pending/.test(low)) return `Failed/Pending: **${st.failed}**. Bolo "retry karo" — main khud retry daal dunga. Ya Activity page open karo.`;
+      if (/workflow|vault/.test(low)) return `Vault tab mein **${st.workflows} workflows/resources** hain jo influencers se mile.`;
+      if (/help|kya kar sakte|what can/.test(low)) return "Main ye kar sakta hoon:\n• Link bhejo → download kar deta hoon (Drive + Sheet auto)\n• \"retry karo\" → failed videos retry\n• \"excel do\" → export\n• \"dark/light\" → theme change\n• \"kitne videos?\" → stats\n• \"library kholo\" → page navigation";
+      return "Samjha nahi poori tarah — par ye bolo: video ka **link** bhejo (main download kar dunga), ya **help** likho sab commands ke liye. 🙂";
+    }
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const q = inp.value.trim(); if (!q) return;
       inp.value = "";
       hist.push({ role: "user", content: q });
-      const thinking = { role: "assistant", content: "\u2026" };
+      const thinking = { role: "assistant", content: "…" };
       hist.push(thinking); paint();
       navigator.vibrate && navigator.vibrate(8);
-      let ans = null;
       try {
-        if (window.RV_API && RV_API.chat) {
-          const r = await RV_API.chat(hist.filter((m) => m !== thinking).slice(-10));
-          ans = r && r.reply;
-        }
-      } catch (_) { ans = null; }
-      if (!ans) {
-        /* offline/demo fallback \u2014 local smart replies */
-        const low = q.toLowerCase();
-        const st = RVData.stats();
-        if (/kitne|how many|total|count/.test(low)) ans = `Your vault currently holds **${st.total} videos** \u2014 ${st.week} added this week, ${st.high} rated Very Useful.`;
-        else if (/fail|error|pending|retry/.test(low)) ans = `Failed/Pending items right now: **${st.failed}**. Open the Activity page and tap "Retry now" \u2014 if the server is awake it finishes in 20-40 seconds.`;
-        else if (/workflow|vault/.test(low)) ans = `The Vault tab keeps **${st.workflows} workflows/resources** you received from influencers.`;
-        else if (/excel|export|sheet/.test(low)) ans = `Tap the "\u2B07 Excel" button at the top \u2014 your whole library downloads in one click with 3 colourful sheets.`;
-        else ans = `I am in offline mode right now (the AI key is not set on the backend, or the server is asleep). Check Settings \u2192 AI Assistant for the status. I can still answer vault questions \u2014 try asking "how many videos?"`;
+        thinking.content = (await agentRespond(q, thinking)).replace(/\*\*(.+?)\*\*/g, "$1");
+      } catch (err) {
+        thinking.content = "Oops — " + (err.message || "kuch gadbad ho gayi");
       }
-      thinking.content = ans.replace(/\*\*(.+?)\*\*/g, "$1");
       paint();
     });
     if (localStorage.getItem(OPEN_KEY) === "1") setOpen(true);

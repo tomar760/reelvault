@@ -54,4 +54,9 @@ app.listen(CFG.PORT, async () => {
     console.error("Sheet structure check failed (will retry on first request):", e.message);
     console.error("→ Make sure the service-account email is EDITOR on the sheet + drive folder.");
   }
+  /* yt-dlp auto-update (Instagram changes ne purana downloader tod diya tha —
+     boot pe latest binary lao; downloads phir se chalne lagti hain) */
+  const dl = require("./services/downloader");
+  await dl.ensureLatestYtDlp().catch((e) => console.error("yt-dlp update err:", e.message));
+  console.log("yt-dlp status:", dl.diagInfo().ytVersion);
 });

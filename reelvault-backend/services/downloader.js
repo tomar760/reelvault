@@ -1,22 +1,117 @@
-/* ReelVault — yt-dlp wrapper (metadata + download, live progress) */
+/* ============================================================
+   ReelVault — yt-dlp wrapper (metadata + download, live progress)
+   v2 — auto-updates yt-dlp on boot (Instagram changes todpete
+   hain purane versions ko), hardened flags, self-test probe.
+   ============================================================ */
 const fs = require("fs");
 const path = require("path");
+const https = require("https");
+const { execFile } = require("child_process");
 const { CFG } = require("../config");
 
+let ytdlpExec = null;
 let youtubedl = null;
+let activeVer = "unknown";
+let activeSrc = "none";
 try {
-  youtubedl = require("yt-dlp-exec");
+  ytdlpExec = require("yt-dlp-exec");
+  youtubedl = ytdlpExec;
+  activeSrc = "bundled";
 } catch (e) {
   console.error("yt-dlp-exec not installed:", e.message);
 }
 
-/* optional cookies for stubborn platforms */
+/* ---------- version helper ---------- */
+function verOf(binPath) {
+  return new Promise((resolve) => {
+    execFile(binPath, ["--version"], { timeout: 8000 }, (err, stdout) => {
+      resolve(err ? null : String(stdout || "").trim());
+    });
+  });
+}
+const BIN_BUNDLED = (() => {
+  try { return require("yt-dlp-exec/src/constants").YOUTUBE_DL_PATH; } catch { return null; }
+})();
+
+async function refreshActiveVersion() {
+  if (BIN_BUNDLED) {
+    const v = await verOf(activeSrc === "custom" ? "/tmp/yt-dlp-latest" : BIN_BUNDLED);
+    if (v) activeVer = `${v} (${activeSrc})`;
+  }
+}
+
+/* ---------- AUTO-UPDATE: latest yt-dlp from GitHub releases ----------
+   Instagram har kuch week mein kuch todta hai — purana yt-dlp = downloads fail.
+   Server boot pe latest binary le aate hain; fail ho toh bundled pe chalte hain. */
+const CUSTOM_BIN = "/tmp/yt-dlp-latest";
+let updateState = { tried: false, ok: false, error: "" };
+
+function downloadFile(url, dest, redirects = 5) {
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers: { "User-Agent": "reelvault-updater" } }, (res) => {
+      if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location && redirects > 0) {
+        res.resume();
+        return resolve(downloadFile(res.headers.location, dest, redirects - 1));
+      }
+      if (res.statusCode !== 200) { res.resume(); return reject(new Error("HTTP " + res.statusCode)); }
+      const out = fs.createWriteStream(dest);
+      res.pipe(out);
+      out.on("finish", () => out.close(resolve));
+      out.on("error", reject);
+    }).on("error", reject);
+  });
+}
+
+async function ensureLatestYtDlp() {
+  if (!ytdlpExec) return;
+  updateState.tried = true;
+  try {
+    fs.chmodSync(BIN_BUNDLED, 0o755);
+  } catch {}
+  try {
+    console.log("[yt-dlp] checking latest release…");
+    await downloadFile("https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp", CUSTOM_BIN);
+    fs.chmodSync(CUSTOM_BIN, 0o755);
+    const v = await verOf(CUSTOM_BIN);
+    if (!v) throw new Error("downloaded binary failed to run");
+    youtubedl = ytdlpExec.create(CUSTOM_BIN);
+    activeSrc = "custom";
+    updateState.ok = true;
+    console.log(`[yt-dlp] AUTO-UPDATED to ${v} ✓`);
+  } catch (e) {
+    updateState.error = e.message;
+    console.log(`[yt-dlp] update skipped (${e.message}) — using bundled`);
+    /* try self-update of bundled as a middle path */
+    try {
+      await new Promise((res) => {
+        execFile(BIN_BUNDLED, ["-U", "--update-to", "stable"], { timeout: 60000 }, () => res());
+      });
+    } catch {}
+  }
+  await refreshActiveVersion();
+}
+refreshActiveVersion();
+
+/* ---------- optional cookies for stubborn platforms ---------- */
 let cookiesFile = null;
 if (process.env.IG_COOKIES_BASE64) {
   try {
     cookiesFile = "/tmp/rv_cookies.txt";
     fs.writeFileSync(cookiesFile, Buffer.from(process.env.IG_COOKIES_BASE64, "base64"));
   } catch (e) { console.error("cookies decode failed", e.message); cookiesFile = null; }
+}
+
+/* ---------- hardened default flags ---------- */
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+function baseFlags(extra = {}) {
+  const f = {
+    noPlaylist: true, noWarnings: true,
+    userAgent: UA,
+    socketTimeout: 25, retries: 3, fragmentRetries: 3,
+    ...extra,
+  };
+  if (cookiesFile) f.cookies = cookiesFile;
+  return f;
 }
 
 function detectPlatform(url) {
@@ -27,11 +122,20 @@ function detectPlatform(url) {
   return "Other";
 }
 
+/* ---------- friendly error mapping ---------- */
+function friendlyError(raw) {
+  const msg = String(raw || "");
+  if (/rate.?limit|429|too many requests/i.test(msg)) return "Instagram rate-limit — thodi der baad Retry karo (ya IG_COOKIES lagao)";
+  if (/login|required|private|403/i.test(msg)) return "Login mang raha hai — IG_COOKIES_BASE64 lagao (guide dekho)";
+  if (/Unsupported/i.test(msg)) return "Unsupported link / platform";
+  if (/Version of|parse|extract|unable to extract/i.test(msg)) return "Platform ne page badal diya — server restart pe yt-dlp auto-update hoga, thodi der baad Retry karo";
+  if (/max-filesize|File is larger/i.test(msg)) return "Video too large (limit cross)";
+  return msg.slice(0, 170) || "download failed";
+}
+
 async function fetchMetadata(url) {
   if (!youtubedl) throw new Error("yt-dlp unavailable");
-  const flags = { dumpSingleJson: true, noPlaylist: true, noWarnings: true };
-  if (cookiesFile) flags.cookies = cookiesFile;
-  const info = await youtubedl(url, flags);
+  const info = await youtubedl(url, baseFlags({ dumpSingleJson: true }));
   return {
     title: (info.title || "Untitled video").toString().slice(0, 140),
     caption: (info.description || info.title || "").toString().slice(0, 600),
@@ -41,7 +145,6 @@ async function fetchMetadata(url) {
     thumb: (() => {
       const t = info.thumbnail || "";
       if (/^https?:\/\//.test(t)) return t;
-      // YouTube fallback — img.youtube.com thumbs never expire
       const m = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{6,20})/.exec(url);
       return m ? `https://img.youtube.com/vi/${m[1]}/mqdefault.jpg` : "";
     })(),
@@ -53,16 +156,13 @@ function downloadVideo(url, outDir, onProgress) {
     if (!youtubedl) return reject(new Error("yt-dlp unavailable"));
     fs.mkdirSync(outDir, { recursive: true });
     const outTpl = path.join(outDir, "rv_video.%(ext)s");
-    const flags = {
+    const flags = baseFlags({
       output: outTpl,
-      noPlaylist: true,
-      noWarnings: true,
       format: "best[ext=mp4]/best",
       maxFilesize: CFG.MAX_FILE_MB + "M",
       mergeOutputFormat: "mp4",
       newline: true,
-    };
-    if (cookiesFile) flags.cookies = cookiesFile;
+    });
     const sub = youtubedl.exec(url, flags);
     if (sub.ytDlpEmitter) {
       sub.ytDlpEmitter.on("update", (u) => {
@@ -77,12 +177,30 @@ function downloadVideo(url, outDir, onProgress) {
       const fp = path.join(outDir, f);
       resolve({ filePath: fp, sizeMB: +(fs.statSync(fp).size / 1048576).toFixed(1) });
     }).catch((e) => {
-      const msg = String(e.stderr || e.message || "");
-      if (/login|required|private/i.test(msg)) reject(new Error("Private account — login required (add IG_COOKIES_BASE64)"));
-      else if (/Unsupported/i.test(msg)) reject(new Error("Unsupported link / platform"));
-      else reject(new Error(msg.slice(0, 160) || "download failed"));
+      reject(new Error(friendlyError(e.stderr || e.message)));
     });
   });
+}
+
+/* ---------- self-test probe (Settings → Run download test) ---------- */
+const PROBE_URL = "https://www.youtube.com/watch?v=aqz-KE-bpKQ"; // Blender's free open movie
+async function probe() {
+  const t0 = Date.now();
+  try {
+    const m = await fetchMetadata(PROBE_URL);
+    return { ok: true, title: m.title, duration: m.duration, tookMs: Date.now() - t0 };
+  } catch (e) {
+    return { ok: false, error: String(e.message || e).slice(0, 200), tookMs: Date.now() - t0 };
+  }
+}
+function diagInfo() {
+  return {
+    ytVersion: activeVer,
+    source: activeSrc,
+    autoUpdate: updateState,
+    cookies: !!cookiesFile,
+    maxFileMB: CFG.MAX_FILE_MB,
+  };
 }
 
 function cleanupTmp(dir) { try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) {} }
@@ -98,4 +216,4 @@ setInterval(() => {
   } catch (e) {}
 }, 6 * 3600 * 1000).unref();
 
-module.exports = { fetchMetadata, downloadVideo, detectPlatform, cleanupTmp };
+module.exports = { fetchMetadata, downloadVideo, detectPlatform, cleanupTmp, ensureLatestYtDlp, probe, diagInfo, friendlyError };
