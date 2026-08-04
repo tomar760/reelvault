@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Insights · ReelVault</title>
   <meta name="description" content="Animated insights — what you save, when, and how useful it turns out to be."/>
-  <meta name="theme-color" content="#f6f4ec"/>
+  <meta name="theme-color" content="#0b1020"/>
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <script>document.documentElement.dataset.theme = localStorage.getItem("rv_theme") || "light";</script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;700;800;900&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body data-bg="waves">
@@ -26,6 +26,14 @@
     </div>
 
     <div class="dash">
+      <section class="mod glass span12" id="an-ai-sec">
+        <div class="mod-h"><h3>✨ AI Monthly Report</h3><span class="tag anim">REAL AI</span></div>
+        <div class="ai-report" id="an-ai-body">
+          <p class="muted" style="margin:0 0 12px">Tumhare vault ke REAL stats dekh kar AI (NVIDIA NIM) report banayega — koi guess ya fake insight nahi.</p>
+          <button class="btn btn-primary" id="an-ai-go" type="button">✨ Report banao</button>
+        </div>
+      </section>
+
       <section class="mod glass span8">
         <div class="mod-h">
           <h3>▲ Downloads per Week</h3>
@@ -50,6 +58,16 @@
       <section class="mod glass span6">
         <div class="mod-h"><h3>▦ Rating Mix per Platform</h3><span class="tag anim">ANIMATED</span></div>
         <div class="chart-box tall"><canvas id="an-platrate"></canvas></div>
+      </section>
+
+      <section class="mod glass span6">
+        <div class="mod-h"><h3>◎ Topic Balance (Radar)</h3><span class="tag anim">ANIMATED</span></div>
+        <div class="chart-box tall"><canvas id="an-radar"></canvas></div>
+      </section>
+
+      <section class="mod glass span6">
+        <div class="mod-h"><h3>◍ Platform Split (Polar)</h3><span class="tag anim">ANIMATED</span></div>
+        <div class="chart-box tall"><canvas id="an-polar"></canvas></div>
       </section>
     </div>
 

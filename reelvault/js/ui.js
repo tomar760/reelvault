@@ -34,12 +34,12 @@
 
   /* ---------------- theme ---------------- */
   function applyTheme() {
-    const th = localStorage.getItem("rv_theme") || "light";
+    const th = localStorage.getItem("rv_theme") || "dark";
     document.documentElement.dataset.theme = th;
     $$(".js-theme-icon").forEach((e) => (e.textContent = th === "dark" ? "☾" : "☀"));
   }
   function toggleTheme() {
-    localStorage.setItem("rv_theme", (localStorage.getItem("rv_theme") || "light") === "dark" ? "light" : "dark");
+    localStorage.setItem("rv_theme", (localStorage.getItem("rv_theme") || "dark") === "dark" ? "light" : "dark");
     applyTheme(); toast("Theme updated");
   }
 
@@ -98,7 +98,7 @@
     top.className = "topbar glass";
     top.innerHTML = `
       <a class="brand" href="index.html">
-        <img src="assets/logo.png" alt="logo"/><span>Reel<b>Vault</b></span>
+        <img src="assets/logo.png" alt="logo"/><span>Reel<b class="grad-text">Vault</b></span>
       </a>
       <div class="topbar-right">
         <span class="chip chip-demo" title="Frontend demo — backend connects next">DEMO MODE</span>
@@ -144,7 +144,11 @@
     $(".modal-handle", wrap).addEventListener("click", closeModal);
     return wrap;
   }
-  function closeModal() { $$(".modal-wrap").forEach((m) => m.remove()); }
+  function closeModal() {
+    $$(".modal-wrap").forEach((m) => m.remove());
+    /* modal band hote hi page data repaint — ♥/🗂/▶ progress turant dikhe */
+    try { window.RVRefresh && window.RVRefresh(); } catch (_) {}
+  }
 
   /* ---------------- quick-add (simulated pipeline) ---------------- */
   function detectPlatform(url) {
@@ -670,11 +674,11 @@
       }
       /* ---- 4. Theme ---- */
       if (/dark|light|theme/.test(low)) {
-        const cur = localStorage.getItem("rv_theme") || "light";
+        const cur = localStorage.getItem("rv_theme") || "dark";
         const want = /dark/.test(low) ? "dark" : (/light/.test(low) ? "light" : (cur === "dark" ? "light" : "dark"));
         localStorage.setItem("rv_theme", want);
         applyTheme();
-        return want === "dark" ? "🌙 Matcha Ink (dark) laga diya. Raat ko aankhein aram se!" : "☀️ Matcha Paper (light) laga diya. Fresh feel!";
+        return want === "dark" ? "🌙 Aurora Dark laga diya. Raat ko aankhein aram se!" : "☀️ Aurora Day laga diya. Fresh feel!";
       }
       /* ---- 5. Open pages ---- */
       const pg = low.match(/(?:open|kholo| dikhao| dikha)\s*(library|vault|activity|settings|insights|analytics|dashboard)/);
@@ -800,5 +804,331 @@
     toast, openModal, closeModal, openQuickAdd, exportExcel,
     simulateAdd, buildVideo, isDuplicate, detectPlatform,
     fmtDate, agoTs, todayInfo, esc, $, $$,
+  };
+})();
+
+/* ============================================================
+   v6 AURORA EXTRAS — favourites ❤ · continue-watching · shortcuts ⌨
+   (download pipeline untouched — pure UI layer)
+   ============================================================ */
+(function () {
+  "use strict";
+  const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v === null || v === undefined ? d : v; } catch (e) { return d; } };
+  const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+  window.RVFavs = {
+    list: () => read("rv_favs", []),
+    has: (sr) => RVFavs.list().includes(String(sr)),
+    toggle(sr) {
+      sr = String(sr);
+      const l = RVFavs.list().filter((x) => x !== sr);
+      if (!RVFavs.has(sr)) l.unshift(sr);
+      write("rv_favs", l);
+      return l.includes(sr);
+    },
+  };
+  window.RVRecent = {
+    list: () => read("rv_recent", []),
+    push(sr) {
+      const l = [String(sr), ...RVRecent.list().filter((x) => x !== String(sr))].slice(0, 8);
+      write("rv_recent", l);
+    },
+  };
+
+  /* ---- ⌨ shortcuts: Ctrl/⌘+K palette · Ctrl/⌘+N quick-add · ? cheatsheet · Esc ---- */
+  const editing = () => { const a = document.activeElement; return a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName); };
+  document.addEventListener("keydown", (e) => {
+    const cmd = e.metaKey || e.ctrlKey;
+    if (cmd && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); }
+    else if (cmd && e.key.toLowerCase() === "n") {
+      e.preventDefault();
+      const q = document.querySelector("#qa-link") || document.querySelector("input[placeholder*='link']");
+      if (q) { q.scrollIntoView({ behavior: "smooth", block: "center" }); q.focus(); }
+    } else if (e.key === "?" && !editing()) { e.preventDefault(); openCheat(); }
+    else if (e.key === "Escape") { const p = document.getElementById("rv-palette"); if (p) p.remove(); else if (window.RVUI && RVUI.closeModal) RVUI.closeModal(); }
+  });
+
+  function openPalette() {
+    if (!window.RVData || document.getElementById("rv-palette")) return;
+    const el = document.createElement("div");
+    el.id = "rv-palette";
+    el.innerHTML = `
+      <div class="pal-back"></div>
+      <div class="pal glass-strong">
+        <input id="pal-in" placeholder="Search videos — title, tag, platform…  (Esc to close)" autocomplete="off"/>
+        <div id="pal-list"></div>
+        <div class="pal-foot">Enter → Library mein kholta hai · Esc band</div>
+      </div>`;
+    document.body.appendChild(el);
+    const inp = el.querySelector("#pal-in"), list = el.querySelector("#pal-list");
+    const run = () => {
+      const q = inp.value.trim().toLowerCase();
+      const vs = (RVData.allVideos() || []).filter((v) => !q || [v.title, v.platform, (v.tags || []).join(" "), v.fileName].join(" ").toLowerCase().includes(q)).slice(0, 8);
+      list.innerHTML = vs.length ? vs.map((v) => `
+        <a class="pal-row" href="library.html?q=${encodeURIComponent((v.title || "").slice(0, 40))}">
+          <span class="pal-ic">${(v.platform || "V").slice(0, 1)}</span>
+          <span class="pal-t"></span>
+          ${window.RVFavs && RVFavs.has(v.sr) ? '<span class="pal-fav">♥</span>' : ""}
+          <span class="muted" style="font-size:11px">${v.platform || ""}</span>
+        </a>`).join("") : `<div class="pal-empty">Kuch nahi mila…</div>`;
+      list.querySelectorAll(".pal-row").forEach((r, i) => {
+        const v = vs[i];
+        r.querySelector(".pal-t").textContent = v.title || "Untitled";
+        if (i === 0) r.classList.add("sel");
+      });
+    };
+    inp.addEventListener("input", run);
+    inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { const r = list.querySelector(".pal-row"); if (r) r.click(); } });
+    el.querySelector(".pal-back").addEventListener("click", () => el.remove());
+    run(); inp.focus();
+  }
+
+  function openCheat() {
+    RVUI.openModal(`
+      <h2 style="margin-bottom:12px">⌨ Keyboard Shortcuts</h2>
+      <div class="cheat-grid">
+        ${[
+          ["Ctrl / ⌘ + K", "Search palette kholo"],
+          ["Ctrl / ⌘ + N", "Quick Add pe jump"],
+          ["Esc", "Palette / modal / select-mode band"],
+          ["?", "Ye cheatsheet"],
+          ["Card ka ⠿ pakdo", "Drag karke apna order banao"],
+          ["☑ Select button", "Multi-select + batch actions"],
+          ["🗂 Folders view", "Videos ko folders mein organize karo"],
+          ["Detail mein ✨ button", "Real AI key points (NIM)"],
+          ["Header ka ◐ button", "Dark / Light — sab pages pe ek saath"],
+        ].map(([k, v]) => `<div class="cheat-row"><code>${k}</code><span>${v}</span></div>`).join("")}
+      </div>`);
+  }
+})();
+
+/* ============================================================
+   v7 FULL POWER — folders 🗂 · custom order ⠿ · watch progress ▶
+   takeaway checks ✔ · REAL AI ✨ (NIM via tumhara backend)
+   (download pipeline untouched — pure UI + localStorage layer)
+   ============================================================ */
+(function () {
+  "use strict";
+  const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v === null || v === undefined ? d : v; } catch (e) { return d; } };
+  const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+  const S = (x) => String(x);
+
+  /* ---------- 🗂 FOLDERS (nested: "Main/Sub") ---------- */
+  window.RVFolders = {
+    map: () => read("rv_folders_map", {}),
+    get: (sr) => RVFolders.map()[S(sr)] || "",
+    set(sr, path) {
+      const m = RVFolders.map();
+      path = (path || "").replace(/^\/+|\/+$/g, "").replace(/\s*\/\s*/g, "/").slice(0, 60);
+      if (path) m[S(sr)] = path; else delete m[S(sr)];
+      write("rv_folders_map", m);
+    },
+    moveMany(srs, path) {
+      path = (path || "").replace(/^\/+|\/+$/g, "").replace(/\s*\/\s*/g, "/").slice(0, 60);
+      const m = RVFolders.map();
+      (srs || []).forEach((sr) => { if (path) m[S(sr)] = path; else delete m[S(sr)]; });
+      write("rv_folders_map", m);
+    },
+    allPaths() {
+      const s = new Set();
+      Object.values(RVFolders.map()).forEach((p) => {
+        const parts = String(p).split("/").filter(Boolean);
+        for (let i = 1; i <= parts.length; i++) s.add(parts.slice(0, i).join("/"));
+      });
+      return [...s].sort((a, b) => a.localeCompare(b));
+    },
+    /* direct subfolders of prefix which contain ≥1 known video */
+    children(prefix, videos) {
+      const m = RVFolders.map(), pre = prefix ? prefix + "/" : "", out = {};
+      Object.entries(m).forEach(([sr, p]) => {
+        p = String(p || "");
+        if (!p.startsWith(pre)) return;
+        const rest = p.slice(pre.length); if (!rest) return;
+        const first = rest.split("/")[0]; if (!first) return;
+        const fp = pre + first;
+        out[fp] = out[fp] || { path: fp, name: first, count: 0 };
+        if ((videos || []).some((v) => S(v.sr) === S(sr))) out[fp].count++;
+      });
+      return Object.values(out);
+    },
+    insideCount(path, videos) {
+      const pre = path ? path + "/" : "";
+      return (videos || []).filter((v) => { const f = RVFolders.get(v.sr); return f === path || (path && f.startsWith(pre)); }).length;
+    },
+    unfiled(videos) { return (videos || []).filter((v) => !RVFolders.get(v.sr)); },
+  };
+
+  /* ---------- ⠿ CUSTOM ORDER ---------- */
+  window.RVOrder = {
+    get: () => read("rv_order", []),
+    set: (arr) => write("rv_order", arr.map(S).slice(0, 900)),
+    clear: () => write("rv_order", []),
+    apply(vs) {
+      const ord = RVOrder.get(); if (!ord.length) return vs;
+      const pos = new Map(ord.map((sr, i) => [S(sr), i]));
+      return vs.slice().sort((a, b) => {
+        const ia = pos.has(S(a.sr)) ? pos.get(S(a.sr)) : 1e9;
+        const ib = pos.has(S(b.sr)) ? pos.get(S(b.sr)) : 1e9;
+        if (ia !== ib) return ia - ib;
+        if (ia === 1e9) return (b.date + b.time).localeCompare(a.date + a.time);
+        return 0;
+      });
+    },
+  };
+
+  /* ---------- ▶ WATCH PROGRESS (player jitni der khula, utna hi count — honest!) ---------- */
+  window.RVProgress = {
+    all: () => read("rv_progress", {}),
+    get: (sr) => RVProgress.all()[S(sr)] || null,
+    add(sr, secs, dur) {
+      const m = RVProgress.all(); sr = S(sr);
+      const cur = m[sr] || { secs: 0, done: false, updated: 0 };
+      cur.secs = Math.min(Math.round(+cur.secs + secs), 86400);
+      cur.updated = Date.now();
+      if (dur && cur.secs >= dur * 0.85) cur.done = true;
+      m[sr] = cur;
+      const keys = Object.keys(m);
+      if (keys.length > 400) { keys.sort((a, b) => (m[a].updated || 0) - (m[b].updated || 0)); keys.slice(0, keys.length - 400).forEach((k) => delete m[k]); }
+      write("rv_progress", m);
+      return cur;
+    },
+    pct(sr, dur) { const p = RVProgress.get(sr); if (!p || !dur) return 0; return Math.max(3, Math.min(100, Math.round((p.secs / dur) * 100))); },
+    fmt(sr, dur) {
+      const p = RVProgress.get(sr); if (!p) return "";
+      if (p.done) return "✓ Dekha hua";
+      const s = Math.round(p.secs), mm = Math.floor(s / 60), ss = s % 60;
+      const t = mm ? `${mm}m ${ss}s` : `${ss}s`;
+      return dur ? `▶ ${t} dekha · ${RVProgress.pct(sr, dur)}%` : `▶ ${t} dekha`;
+    },
+  };
+
+  /* ---------- ✔ AI takeaway checkboxes ---------- */
+  window.RVChecks = {
+    all: () => read("rv_ai_checks", {}),
+    list: (sr) => RVChecks.all()[S(sr)] || [],
+    toggle(sr, idx) {
+      const m = RVChecks.all(); sr = S(sr);
+      const had = (m[sr] || []).includes(idx);
+      const l = (m[sr] || []).filter((x) => x !== idx);
+      if (!had) l.push(idx);
+      if (l.length) m[sr] = l; else delete m[sr];
+      write("rv_ai_checks", m);
+      return !had;
+    },
+  };
+
+  /* ---------- ✨ REAL AI (NVIDIA NIM llama — tumhara backend; koi fake text nahi) ---------- */
+  window.RVAI = {
+    live: () => !!(window.RV_API && RV_API.isLive && RV_API.isLive()),
+    cache: {
+      get(k) { return read("rv_ai", {})[k] || null; },
+      set(k, v) { const m = read("rv_ai", {}); m[k] = v; const ks = Object.keys(m); if (ks.length > 150) ks.slice(0, ks.length - 150).forEach((x) => delete m[x]); write("rv_ai", m); },
+      del(k) { const m = read("rv_ai", {}); delete m[k]; write("rv_ai", m); },
+    },
+    async ask(prompt, maxSlice) {
+      if (!RVAI.live()) return { ok: false, reason: "offline" };
+      try {
+        const r = await RV_API.chat([{ role: "user", content: prompt }]);
+        if (r && r.reply) return { ok: true, text: String(r.reply).slice(0, maxSlice || 1500) };
+        return { ok: false, reason: "nokey" };
+      } catch (e) { return { ok: false, reason: "err" }; }
+    },
+    /* sirf numbered/bullet points nikalo — intro/outro lines drop */
+    bullets(text, max) {
+      const lines = String(text || "").split(/\n+/).map((l) => l.trim()).filter(Boolean);
+      const pts = [];
+      for (const l of lines) {
+        const m = l.match(/^(?:(?:\d+|[•\-*▪])\s*[.)]?\s+)(.+)$/) || l.match(/^(?:\d+)[.)]?(\S.+)$/);
+        if (!m) continue;
+        let body = (m[1] || "").replace(/\*\*/g, "").trim();
+        if (body.length < 10) continue;
+        if (body.split(" ").length <= 5 && body.endsWith(":")) continue; // intro line like "Yeh metadata hai:"
+        pts.push(body);
+        if (pts.length >= (max || 6)) break;
+      }
+      if (!pts.length) { // numbering na mili to sentences
+        const sents = String(text || "").split(/(?<=[.!।?])\s+/).map((s) => s.replace(/\*\*/g, "").trim()).filter((s) => s.length > 15);
+        return sents.slice(0, max || 6);
+      }
+      return pts;
+    },
+    offlineHtml() {
+      return `<div class="ai-warn">🤖 <b>AI abhi live nahi hai</b> — demo mode chal raha hai ya backend so raha hai.<br>Mein fake/jugaad points NAHI banaunga (pakka promise) — backend LIVE hote hi dabao: <b>Settings → Backend status</b> dekho, phir <b>✨ Key points</b> try karo.</div>`;
+    },
+    nokeyHtml() {
+      return `<div class="ai-warn">🤖 AI key (NIM_API_KEY) backend mein abhi set nahi lag rahi — Settings → <b>Run self-test</b> chala ke dekho.</div>`;
+    },
+    async videoPoints(v, force) {
+      const key = "vp_" + v.sr;
+      if (!force) { const c = RVAI.cache.get(key); if (c && Date.now() - c.t < 1000 * 60 * 60 * 24 * 14) return { ok: true, bullets: c.b, cached: true }; }
+      const durS = +v.duration || 0;
+      const dur = durS ? (durS >= 60 ? Math.floor(durS / 60) + "m" + (durS % 60 ? " " + (durS % 60) + "s" : "") : durS + "s") : "unknown";
+      const topic = (window.RVData && RVData.topicOf) ? RVData.topicOf(v.topicKey).label : (v.topicKey || "?");
+      const rating = (window.RVData && RVData.ratingOf) ? RVData.ratingOf(v.ratingKey).label : (v.ratingKey || "?");
+      const prompt =
+        "TASK: Mere vault ke ek SAVED video ka REAL metadata de raha hoon. Sirf isi data se 4-5 chhote Hinglish bullet points banao (har bullet max 12 words): (1) video kis baare mein hai, (2) kya seekhne milega, (3) kiske kaam aayega, (4) kab ya kaise dekhna best rahega. Sirf numbered bullets do (1. 2. 3. ...), koi intro ya outro line bilkul nahi. Jo baat data se clear na ho wo mat banao.\n" +
+        `DATA → Title: ${(v.title || "Untitled").slice(0, 120)} | Platform: ${v.platform || "?"} | Topic: ${topic} | Tags: ${(v.tags || []).slice(0, 6).join(", ") || "—"} | Duration: ${dur} | Meri rating: ${rating}${v.remarks ? " | Note: " + String(v.remarks).slice(0, 140) : ""}`;
+      const r = await RVAI.ask(prompt);
+      if (!r.ok) return r;
+      const b = RVAI.bullets(r.text, 5);
+      if (b.length) RVAI.cache.set(key, { t: Date.now(), b });
+      return { ok: true, bullets: b, cached: false };
+    },
+    async vaultGuide(items) {
+      const list = items.slice(0, 12).map((w, i) => `${i + 1}) ${String(w.name || "").slice(0, 60)} — ${w.type}${w.influencer ? ", by " + w.influencer : ""}${w.message ? ": " + String(w.message).slice(0, 90) : ""}`).join("\n");
+      const prompt =
+        "TASK: Mere Vault ke ye resources hain (influencers se mile):\n" + list +
+        "\nInhe dekh kar 5 chhote Hinglish numbered points batao (har point max 14 words): (1) sabse pehle kya try karu aur kyun, (2) in sabka common theme, (3) time bachane ka best combination, (4) kya baad mein rakh sakta hoon, (5) ek practical advice. Sirf numbered points do, koi intro nahi. Sirf upar diye data se bolo, kuch apne se mat banao.";
+      const r = await RVAI.ask(prompt, 1200);
+      if (!r.ok) return r;
+      return { ok: true, bullets: RVAI.bullets(r.text, 5) };
+    },
+    async report(force) {
+      const key = "report", today = new Date().toISOString().slice(0, 10);
+      if (!force) { const c = RVAI.cache.get(key); if (c && c.day === today) return { ok: true, bullets: c.b, cached: true }; }
+      const s = RVData.stats();
+      const wk = RVData.weeklyCounts(6).map((w) => `${w.label}:${w.count}`).join(" ");
+      const tops = RVData.byTopic().filter((t) => t.count > 0).sort((a, b) => b.count - a.count).slice(0, 3).map((t) => `${t.label}(${t.count})`).join(", ");
+      const plats = RVData.byPlatform().filter((p) => p.count > 0).map((p) => `${p.key}(${p.count})`).join(", ");
+      const prompt =
+        "TASK: Ye mere video-vault ke REAL stats hain:\n" +
+        `Total ${s.total} videos | is hafte ${s.week} | Very Useful ${s.high} | Failed ${s.failed} | Pending ${s.pending} | Workflows ${s.workflows} | Drive ${s.driveGB}/15GB\n` +
+        `Hafte-wise: ${wk}\nTopics: ${tops || "—"}\nPlatforms: ${plats || "—"}\n` +
+        "Is se 5 chhote Hinglish numbered points banao (har point max 15 words): (1) vault ki overall health, (2) sabse strong trend, (3) failures ya pending pe 1 advice, (4) agle hafte ka chhota plan, (5) ek motivating line. Sirf numbered points do, koi intro nahi.";
+      const r = await RVAI.ask(prompt, 1200);
+      if (!r.ok) return r;
+      const b = RVAI.bullets(r.text, 5);
+      if (b.length) RVAI.cache.set(key, { day: today, t: Date.now(), b });
+      return { ok: true, bullets: b, cached: false };
+    },
+  };
+
+  /* ---------- 🗂 folder picker popup (single ya batch dono ke liye) ---------- */
+  RVUI.pickFolder = function (current) {
+    return new Promise((resolve) => {
+      const paths = RVFolders.allPaths();
+      let settled = false;
+      const wrap = RVUI.openModal(`
+        <h2 style="margin-bottom:4px">🗂 Folder mein daalo</h2>
+        <p class="muted" style="margin:0 0 14px;font-size:12.5px">Nested folder ke liye "/" likho — jaise <code>Tech/AI Tools</code></p>
+        <div class="fld-pick">
+          <button class="fld-opt ${!current ? "on" : ""}" data-p="" type="button">📥 Baaki Videos (unfiled)</button>
+          ${paths.map((p) => `<button class="fld-opt ${current === p ? "on" : ""}" data-p="${RVUI.esc(p)}" type="button">🗂 ${RVUI.esc(p)}</button>`).join("")}
+        </div>
+        <div class="fld-new">
+          <input id="fp-new" placeholder="Naya folder ka naam… (e.g. Tech/AI Tools)" maxlength="60" autocomplete="off"/>
+          <button class="btn btn-primary" id="fp-create" type="button">Create ✓</button>
+        </div>`);
+      const done = (p) => { if (settled) return; settled = true; RVUI.closeModal(); resolve(p); };
+      wrap.querySelectorAll(".fld-opt").forEach((b) => b.addEventListener("click", () => done(b.dataset.p)));
+      const mk = () => { const v = wrap.querySelector("#fp-new").value.trim(); if (!v) { RVUI.toast("Pehle folder ka naam likho", "warn"); return; } done(v); };
+      wrap.querySelector("#fp-create").addEventListener("click", mk);
+      wrap.querySelector("#fp-new").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); mk(); } });
+      const back = wrap.querySelector(".modal-back");
+      if (back) back.addEventListener("click", () => { if (!settled) { settled = true; resolve(null); } });
+      const x = wrap.querySelector(".modal-x, .modal-close, [data-close]");
+      if (x) x.addEventListener("click", () => { if (!settled) { settled = true; resolve(null); } });
+      setTimeout(() => { const i = wrap.querySelector("#fp-new"); i && i.focus({ preventScroll: true }); }, 300);
+    });
   };
 })();

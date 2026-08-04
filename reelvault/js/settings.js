@@ -172,3 +172,60 @@
     });
   };
 })();
+
+/* ---------- v6: Backup & Restore ---------- */
+(function () {
+  "use strict";
+  const $ = RVUI.$;
+  const ex = $("#bk-export");
+  if (!ex) return;
+  ex.addEventListener("click", async () => {
+    try {
+      ex.disabled = true; ex.textContent = "⏳ Preparing…";
+      let data;
+      if (window.RV_API && RV_API.isLive && RV_API.isLive()) {
+        const r = await RV_API.req("/api/export");
+        data = { videos: r.videos || [], vault: r.vault || [] };
+      } else {
+        data = { videos: RVData.allVideos(), vault: RVData.vault() };
+      }
+      data.favourites = localStorage.getItem("rv_favs") || "[]";
+      data.recentlyViewed = localStorage.getItem("rv_recent") || "[]";
+      data.theme = localStorage.getItem("rv_theme") || "dark";
+      data.folders = localStorage.getItem("rv_folders_map") || "{}";
+      data.customOrder = localStorage.getItem("rv_order") || "[]";
+      data.watchProgress = localStorage.getItem("rv_progress") || "{}";
+      data.aiChecks = localStorage.getItem("rv_ai_checks") || "{}";
+      data.exportedAt = new Date().toISOString();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `reelvault-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click(); URL.revokeObjectURL(a.href);
+      RVUI.toast("Backup download ho gaya 💾");
+    } catch (e) { RVUI.toast("Backup failed: " + e.message, "err"); }
+    finally { ex.disabled = false; ex.textContent = "⬇ Backup JSON"; }
+  });
+  $("#bk-import").addEventListener("click", () => $("#bk-file").click());
+  $("#bk-file").addEventListener("change", (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const d = JSON.parse(rd.result);
+        if (d.favourites) localStorage.setItem("rv_favs", d.favourites);
+        if (d.recentlyViewed) localStorage.setItem("rv_recent", d.recentlyViewed);
+        if (d.theme) localStorage.setItem("rv_theme", d.theme);
+        if (d.folders) localStorage.setItem("rv_folders_map", d.folders);
+        if (d.customOrder) localStorage.setItem("rv_order", d.customOrder);
+        if (d.watchProgress) localStorage.setItem("rv_progress", d.watchProgress);
+        if (d.aiChecks) localStorage.setItem("rv_ai_checks", d.aiChecks);
+        const n = Array.isArray(d.videos) ? d.videos.length : 0;
+        RVUI.toast(`Restore ho gaya — ${n} videos backup mein mile (videos Sheet se hi aate hain) · ♥ favourites · 🗂 folders · ⠿ order · ▶ progress restored`);
+        setTimeout(() => location.reload(), 1200);
+      } catch (err) { RVUI.toast("Ye backup file nahi lag rahi: " + err.message, "err"); }
+    };
+    rd.readAsText(f);
+    e.target.value = "";
+  });
+})();

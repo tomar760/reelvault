@@ -120,7 +120,7 @@
   function renderCharts() {
     charts.forEach((c) => c.destroy()); charts = [];
     if (typeof Chart === "undefined") return;
-    Chart.defaults.font.family = "Instrument Sans, system-ui, sans-serif";
+    Chart.defaults.font.family = "Inter, system-ui, sans-serif";
     Chart.defaults.color = css("--muted", "#8b949e");
 
     // M6 weekly line
@@ -227,7 +227,34 @@
   /* ---------- M4: recent videos strip ---------- */
   function renderRecent() {
     const vs = RVData.allVideos().slice(0, 6);
-    $("#m4-recent").innerHTML = vs.map((v) => {
+    /* ▶ Continue watching — progress wali pehle, phir recently opened */
+    const ids = [];
+    if (window.RVProgress) {
+      Object.entries(RVProgress.all())
+        .filter(([, p]) => p && p.secs > 0)
+        .sort((a, b) => (b[1].updated || 0) - (a[1].updated || 0))
+        .forEach(([sr]) => ids.push(String(sr)));
+    }
+    (window.RVRecent ? RVRecent.list() : []).forEach((sr) => { if (!ids.includes(String(sr))) ids.push(String(sr)); });
+    const cw = ids.map((sr) => RVData.allVideos().find((v) => String(v.sr) === sr)).filter(Boolean).slice(0, 6);
+    const cwHtml = cw.length
+      ? `<div class="cw-head">▶ Continue watching</div><div class="cw-strip">` +
+        cw.map((v) => {
+          const t2 = RVData.topicOf(v.topicKey);
+          const th2 = v.thumb && /^https?:/.test(v.thumb) ? v.thumb : t2.thumb;
+          const pr = window.RVProgress ? RVProgress.get(v.sr) : null;
+          let bar = "";
+          if (pr && !pr.done && +v.duration) bar = `<span class="wp-bar"><i style="width:${RVProgress.pct(v.sr, +v.duration)}%"></i></span>`;
+          else if (pr && pr.done) bar = `<span class="wp-done xs">✓</span>`;
+          const lbl = pr ? RVProgress.fmt(v.sr, +v.duration || 0) : "Abhi khola";
+          return `<a class="cw-item" href="library.html?open=${encodeURIComponent(v.sr)}" title="${esc(v.title)} — click se wahan pahunch jao">
+            <span class="cw-thumb" style="background-image:url('${th2}')">${bar}</span>
+            <span class="cw-t">${esc((v.title || "").slice(0, 26))}${(v.title || "").length > 26 ? "…" : ""}</span>
+            <span class="cw-p">${esc(lbl)}</span>
+          </a>`;
+        }).join("") + `</div>`
+      : "";
+    $("#m4-recent").innerHTML = cwHtml + vs.map((v) => {
       const t = RVData.topicOf(v.topicKey), r = RVData.ratingOf(v.ratingKey);
       return `<a class="rc-row" href="library.html">
         <span class="rc-thumb" style="background-image:url('${t.thumb}')"></span>

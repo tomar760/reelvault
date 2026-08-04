@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Library · ReelVault</title>
   <meta name="description" content="Every saved video — searchable, filterable, organized."/>
-  <meta name="theme-color" content="#f6f4ec"/>
+  <meta name="theme-color" content="#0b1020"/>
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <script>document.documentElement.dataset.theme = localStorage.getItem("rv_theme") || "light";</script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;700;800;900&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body data-bg="strips">
@@ -37,10 +37,17 @@
         <option value="date-asc">Oldest first</option>
         <option value="size-desc">Largest files</option>
         <option value="rating">Highest rated</option>
+        <option value="custom">✨ My order (drag)</option>
       </select>
       <label class="lib-check"><input type="checkbox" id="f-wf"/> only with workflow</label>
+      <button class="btn btn-mini" id="f-fav" type="button" title="Sirf favourite videos">♡ Favourites</button>
+      <button class="btn btn-mini" id="f-view" type="button" title="Grid · List · Folders — cycle karo">▦ Grid view</button>
+      <button class="btn btn-mini" id="f-select" type="button" title="Kai videos ek saath select karo">☑ Select</button>
       <button class="btn btn-mini btn-ghost" id="lib-clear">Clear</button>
     </div>
+
+    <!-- Folders breadcrumb (folders view mein dikhta hai) -->
+    <div class="lib-crumbs" id="lib-crumbs" hidden></div>
 
     <!-- M4: LIBRARY GRID -->
     <div class="lib-grid" id="lib-grid"></div>

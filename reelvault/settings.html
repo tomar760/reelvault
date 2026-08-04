@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Settings · ReelVault</title>
   <meta name="description" content="ReelVault settings — appearance, topics, passcode, storage and install."/>
-  <meta name="theme-color" content="#f6f4ec"/>
+  <meta name="theme-color" content="#0b1020"/>
   <link rel="manifest" href="manifest.json"/>
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png"/>
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <script>document.documentElement.dataset.theme = localStorage.getItem("rv_theme") || "light";</script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;700;800;900&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
 <body data-bg="aurora">
@@ -108,6 +108,16 @@
         <div class="btn-row">
           <button class="btn btn-mini btn-export js-export" id="set-export">⬇ Export Excel</button>
           <button class="btn btn-mini btn-ghost" id="set-reset">Reset demo data</button>
+        </div>
+      </section>
+
+      <section class="mod glass">
+        <div class="mod-h"><h3>💾 Backup &amp; Restore</h3></div>
+        <p class="muted" style="font-size:13px;margin:8px 0 14px;line-height:1.6">Poore data ka JSON backup download karo — videos (live Sheet se), vault, favourites aur continue-watching. Restore se favourites/theme wapas aa jaate hain; videos hamesha Sheet mein safe hain.</p>
+        <div class="btn-row" style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="bk-export" type="button">⬇ Backup JSON</button>
+          <button class="btn btn-ghost" id="bk-import" type="button">⬆ Restore…</button>
+          <input type="file" id="bk-file" accept="application/json" hidden/>
         </div>
       </section>
 
