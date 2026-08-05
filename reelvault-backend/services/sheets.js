@@ -75,15 +75,29 @@ async function nextSrNo() {
   const col = await getRange("Videos!A2:A50000");
   let max = 0;
   col.forEach((r) => { const n = parseInt(r[0], 10); if (!isNaN(n) && n > max) max = n; });
-  return String(max + 1).padStart(4, "0");
+  return String(max + 1); // unpadded — Sheet USER_ENTERED numbers ke saath hamesha match
 }
+/* Sr_No Sheet mein number ban jaata hai ("0002" → 2) — isliye compare numeric-tolerant */
 async function findRowIndexBySr(sr) {
   const col = await getRange("Videos!A2:A50000");
-  for (let i = 0; i < col.length; i++) if (col[i][0] === sr) return i + 2; // 1-based + header
+  const want = String(sr ?? "").trim();
+  const wantN = parseInt(want, 10);
+  for (let i = 0; i < col.length; i++) {
+    const got = String(col[i] && col[i][0] != null ? col[i][0] : "").trim();
+    if (!got) continue;
+    if (got === want) return i + 2; // 1-based + header
+    if (!isNaN(wantN) && parseInt(got, 10) === wantN) return i + 2;
+  }
   return -1;
 }
 async function addVideoRow(values) { await appendRows("Videos", [values]); }
+/* rowIndex gum ho/delete ho gaya ho to CRASH kabhi nahi — nayi row append kar do */
 async function updateVideoRow(rowIndex, values) {
+  if (!rowIndex || rowIndex < 2) {
+    console.warn("updateVideoRow: row missing (deleted?) — appending a fresh row instead");
+    await appendRows("Videos", [values]);
+    return;
+  }
   await updateRange(`Videos!A${rowIndex}:W${rowIndex}`, [values]);
 }
 async function videoToRow(v) {

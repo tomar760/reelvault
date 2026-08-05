@@ -24,7 +24,7 @@
   const R = (a, b) => a + Math.random() * (b - a);
 
   /* ---------------- EFFECT 1: ORBS (Dashboard) ---------------- */
-  const CANDY = [172, 262, 334]; // aurora: teal, violet, coral-pink
+  const CANDY = [14, 168, 42]; // paper-pop: coral, teal, golden
   function makeOrbs() {
     const nodes = [];
     for (let i = 0; i < 26; i++) nodes.push({ x: R(0, W), y: R(0, H), r: R(2, 5), vx: R(-0.25, 0.25), vy: R(-0.2, 0.2), hue: CANDY[i % 3] + R(-12, 12) });

@@ -5,39 +5,39 @@
    Mobile-first • stationery-premium • hatke
    ============================================================================ */
 :root {
-  /* AURORA GLASS — dark (DEFAULT) · Claude-clean type + aurora colours */
-  --bg: #0b1020; --bg2: #111832;
-  --card: rgba(255, 255, 255, 0.055); --card-strong: rgba(15, 21, 42, 0.94);
-  --text: #eef1ff; --muted: #9aa3c7;
-  --line: rgba(255, 255, 255, 0.13);
-  --glass-brd: rgba(255, 255, 255, 0.10);
-  --shadow: 0 18px 44px rgba(2, 5, 18, 0.62);
-  --pink: #ff6fb0; --violet: #8a6ff5; --cyan: #37e0c8; --lime: #8fd8a0;
-  --amber: #f2b04c; --blue: #6aa8ff; --green: #37e0c8; --red: #ff7a7a;
-  --grad-brand: linear-gradient(95deg, #37e0c8, #8a6ff5 55%, #ff6fb0);
-  --grad-btn: linear-gradient(120deg, #e07856, #c85a3c);
-  --grad-export: linear-gradient(120deg, #f2b04c, #e07856);
-  --grad-green: linear-gradient(120deg, #2fc7b4, #7a5ff0);
+  /* PAPER POP — light (DEFAULT) · playful candy on warm cream · Baloo 2 + Poppins */
+  --bg: #fff6e9; --bg2: #ffedd8;
+  --card: #ffffff; --card-strong: rgba(255, 255, 255, 0.97);
+  --text: #40332c; --muted: #97816f;
+  --line: #f2e3d0;
+  --glass-brd: #efe0cd;
+  --shadow: 0 12px 28px rgba(191, 122, 74, 0.15);
+  --pink: #ff5d8f; --violet: #7c5cff; --cyan: #12b8a0; --lime: #67b26f;
+  --amber: #e8930c; --blue: #4f8cff; --green: #1aa179; --red: #ff5d5d;
+  --grad-brand: linear-gradient(95deg, #ff6b4a, #ff5d8f 55%, #7c5cff);
+  --grad-btn: linear-gradient(120deg, #ff7a52, #ff5d6e);
+  --grad-export: linear-gradient(120deg, #ffc93c, #ff8a3c);
+  --grad-green: linear-gradient(120deg, #12b8a0, #4f8cff);
   --btn-ink: #ffffff;
-  --r: 20px; --r-sm: 13px;
-  --font-h: "Inter Tight", "Inter", system-ui, sans-serif;
-  --font-b: "Inter", system-ui, sans-serif;
+  --r: 22px; --r-sm: 14px;
+  --font-h: "Baloo 2", "Poppins", system-ui, sans-serif;
+  --font-b: "Poppins", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, monospace;
 }
-[data-theme="light"], :root:not([data-theme]) {
-  /* AURORA DAY — warm ivory */
-  --bg: #faf9f5; --bg2: #f1eee6;
-  --card: rgba(255, 255, 255, 0.88); --card-strong: rgba(255, 255, 255, 0.97);
-  --text: #1f1b2a; --muted: #6f6a7e;
-  --line: rgba(31, 27, 42, 0.13);
-  --glass-brd: rgba(31, 27, 42, 0.09);
-  --shadow: 0 12px 30px rgba(90, 78, 60, 0.14);
-  --pink: #e0548e; --violet: #6f4fe0; --cyan: #0da88e; --lime: #4e9a5f;
-  --amber: #cf8d20; --blue: #2f6fd0; --green: #0d9a83; --red: #d24b4b;
-  --grad-brand: linear-gradient(95deg, #0da88e, #6f4fe0 55%, #e0548e);
-  --grad-btn: linear-gradient(120deg, #e07856, #c85a3c);
-  --grad-export: linear-gradient(120deg, #f2b04c, #e07856);
-  --grad-green: linear-gradient(120deg, #0da88e, #6f4fe0);
+[data-theme="dark"] {
+  /* PAPER NIGHT — warm cocoa dark (header button se toggle, sab pages pe yaad rahega) */
+  --bg: #251d1b; --bg2: #2e2320;
+  --card: #312622; --card-strong: rgba(49, 38, 34, 0.97);
+  --text: #f9ece1; --muted: #c0a794;
+  --line: rgba(255, 236, 220, 0.14);
+  --glass-brd: rgba(255, 236, 220, 0.12);
+  --shadow: 0 14px 34px rgba(10, 4, 2, 0.5);
+  --pink: #ff7aa5; --violet: #9d86ff; --cyan: #2fd4ba; --lime: #8fd8a0;
+  --amber: #ffb84d; --blue: #7aaaff; --green: #3fd6a8; --red: #ff8585;
+  --grad-brand: linear-gradient(95deg, #ff8a6a, #ff7aa5 55%, #9d86ff);
+  --grad-btn: linear-gradient(120deg, #ff8a5c, #ff6d7e);
+  --grad-export: linear-gradient(120deg, #ffc93c, #ff8a3c);
+  --grad-green: linear-gradient(120deg, #2fd4ba, #7aaaff);
   --btn-ink: #ffffff;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -858,3 +858,232 @@ body.batch-on .page { padding-bottom: 120px; }
 .vault-card { overflow: hidden; }
 .vault-card.sel-card .sel-check { top: 10px; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } }
+
+/* ============================================================================
+   v8 PAPER POP SKIN — warm cream + candy accents · Baloo 2 + Poppins
+   (saare v6/v7 features same — sirf LOOK badli hai; Paper Night dark bhi saath)
+   ============================================================================ */
+
+/* ---- pastel blobs (purane aurora glows ki jagah) ---- */
+body::after {
+  background:
+    radial-gradient(900px 620px at 90% -10%, rgba(255, 201, 60, 0.20), transparent 62%),
+    radial-gradient(820px 600px at -10% 108%, rgba(18, 184, 160, 0.14), transparent 58%),
+    radial-gradient(700px 520px at 55% 118%, rgba(255, 93, 143, 0.12), transparent 60%) !important;
+}
+[data-theme="dark"] body::after {
+  background:
+    radial-gradient(900px 620px at 90% -10%, rgba(255, 138, 92, 0.12), transparent 62%),
+    radial-gradient(820px 600px at -10% 108%, rgba(47, 212, 186, 0.10), transparent 58%),
+    radial-gradient(700px 520px at 55% 118%, rgba(255, 122, 165, 0.09), transparent 60%) !important;
+}
+::selection { background: rgba(255, 107, 74, 0.30); }
+
+/* ---- headings: naya rounded look + candy underline ---- */
+h1, h2, h3, .brand, .stat-num { letter-spacing: 0.1px; }
+.page-head h1 { font-weight: 800; }
+.page-head h1::after { height: 7px !important; border-radius: 99px !important; }
+.page-head p { font-size: 13.5px; }
+
+/* ---- topbar: doodh jaisa white pill ---- */
+.topbar { background: var(--card-strong); border: 1.5px solid var(--glass-brd); box-shadow: var(--shadow); backdrop-filter: blur(18px); }
+.brand img { box-shadow: 0 4px 14px rgba(255, 107, 74, 0.35); border-radius: 12px; }
+
+/* ---- nav: candy pills ---- */
+@media (min-width: 1000px) {
+  .side-link:hover { background: rgba(255, 107, 74, 0.10); }
+  .side-link.active { background: var(--grad-btn); box-shadow: 0 8px 20px rgba(255, 93, 110, 0.40); }
+  .side-add { box-shadow: 0 8px 20px rgba(18, 184, 160, 0.35); }
+}
+.bn-link.active, .bn-link:active { color: #fff; background: var(--grad-btn); box-shadow: 0 6px 16px rgba(255, 93, 110, 0.4); }
+.bottomnav { background: var(--card-strong); border: 1.5px solid var(--glass-brd); box-shadow: var(--shadow); }
+
+/* ---- glass cards: soft paper ---- */
+.glass { border: 1.5px solid var(--glass-brd); box-shadow: var(--shadow); }
+.glass-strong { border: 1.5px solid var(--glass-brd); }
+[data-theme="dark"] .glass { border-color: var(--glass-brd); }
+
+/* ---- buttons: chunky candy ---- */
+.btn { font-family: var(--font-b); border-radius: 15px; font-weight: 600; letter-spacing: 0.15px; }
+.btn-primary { background: var(--grad-btn); color: #fff; border: none; box-shadow: 0 8px 20px rgba(255, 93, 110, 0.35); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(255, 93, 110, 0.42); filter: brightness(1.03); }
+.btn-primary:active { transform: translateY(0) scale(0.98); }
+.btn-ghost { border: 1.5px solid var(--glass-brd); background: var(--card); color: var(--text); }
+.btn-ghost:hover { border-color: var(--cyan); }
+.btn-mini { background: rgba(124, 92, 255, 0.12) !important; font-weight: 600; }
+.btn-mini:hover { background: rgba(124, 92, 255, 0.20) !important; }
+
+/* ---- chips: pastel fills ---- */
+.chip { font-weight: 700; letter-spacing: 0.2px; }
+.chip-green { background: rgba(18, 184, 160, 0.15); color: #0d8570; }
+.chip-red { background: rgba(255, 93, 93, 0.14); color: #d64545; }
+.chip-amber { background: rgba(232, 147, 12, 0.15); color: #b06f08; }
+.chip-blue { background: rgba(79, 140, 255, 0.15); color: #3a6fd0; }
+.chip-violet { background: rgba(124, 92, 255, 0.14); color: #6846e0; }
+.chip-ghost { background: rgba(150, 130, 110, 0.12); color: var(--muted); }
+[data-theme="dark"] .chip-green { color: #4ce0b8; }
+[data-theme="dark"] .chip-red { color: #ff9d9d; }
+[data-theme="dark"] .chip-amber { color: #ffc46b; }
+[data-theme="dark"] .chip-blue { color: #9dbeff; }
+[data-theme="dark"] .chip-violet { color: #b9a5ff; }
+
+/* ---- stat cards: candy top-strip + icon chip ---- */
+.stat-card { border: 1.5px solid var(--glass-brd); position: relative; overflow: hidden; }
+.stat-num { font-family: var(--font-h); font-weight: 800; }
+.stat-label { font-weight: 600; }
+
+/* ---- library cards ---- */
+.lib-card { border: 1.5px solid var(--glass-brd); transition: transform 0.25s cubic-bezier(.2,.9,.3,1.2), box-shadow 0.25s; }
+.lib-card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(255, 107, 74, 0.18), var(--shadow); }
+.lib-title { font-family: var(--font-h); font-weight: 700; }
+.lib-thumb .dur { background: rgba(37, 29, 27, 0.82); backdrop-filter: blur(3px); font-weight: 700; }
+.fav-badge { filter: drop-shadow(0 2px 6px rgba(255, 93, 143, 0.6)); }
+.topic-tile { background: rgba(255, 255, 255, 0.65); }
+[data-theme="dark"] .topic-tile { background: rgba(255, 255, 255, 0.05); }
+.topic-tile:hover { background: rgba(255, 107, 74, 0.12); }
+
+/* ---- toolbar / inputs ---- */
+.lib-toolbar { border: 1.5px solid var(--glass-brd); }
+.lib-toolbar input[type="search"], .lib-toolbar select, .qa-grid input, .qa-grid select, .aichat-form input {
+  background: #fffdf8; border: 1.5px solid var(--line); border-radius: 13px; color: var(--text);
+}
+[data-theme="dark"] .lib-toolbar input[type="search"], [data-theme="dark"] .lib-toolbar select,
+[data-theme="dark"] .qa-grid input, [data-theme="dark"] .qa-grid select, [data-theme="dark"] .aichat-form input {
+  background: rgba(255, 255, 255, 0.06); border-color: var(--line);
+}
+.lib-toolbar input:focus, .lib-toolbar select:focus, .qa-grid input:focus, .aichat-form input:focus {
+  border-color: var(--cyan); box-shadow: 0 0 0 4px rgba(18, 184, 160, 0.16); outline: none;
+}
+.lib-check { font-weight: 600; }
+
+/* ---- download status card ---- */
+.dl-card .prog-fill, .prog-fill { background: var(--grad-green); }
+
+/* ---- modals: soft pop ---- */
+.modal { border: 1.5px solid var(--glass-brd); box-shadow: 0 30px 70px rgba(120, 70, 40, 0.25); }
+
+/* ---- AI ✨: peach candy block ---- */
+.ai-box { background: linear-gradient(140deg, rgba(255, 201, 60, 0.10), rgba(255, 107, 74, 0.08) 55%, rgba(124, 92, 255, 0.07)) !important; border: 1.5px solid rgba(255, 107, 74, 0.30) !important; }
+[data-theme="dark"] .ai-box { background: linear-gradient(140deg, rgba(255, 201, 60, 0.07), rgba(255, 107, 74, 0.07) 55%, rgba(124, 92, 255, 0.07)) !important; }
+.ai-num { background: linear-gradient(135deg, #ffc93c, #ff5d8f); color: #4a2410; }
+.btn-ai { background: linear-gradient(120deg, rgba(255, 201, 60, 0.18), rgba(255, 93, 143, 0.16)) !important; border: 1.5px solid rgba(255, 107, 74, 0.40) !important; }
+.btn-ai:hover { box-shadow: 0 0 16px rgba(255, 107, 74, 0.30); }
+
+/* ---- fab + chat ---- */
+.aichat-fab { background: var(--grad-btn); box-shadow: 0 10px 26px rgba(255, 93, 110, 0.45); }
+.aichat-msg.user { background: var(--grad-btn); color: #fff; }
+.aichat-msg.assistant { background: rgba(255, 246, 233, 0.9); color: var(--text); border: 1px solid var(--glass-brd); }
+[data-theme="dark"] .aichat-msg.assistant { background: rgba(255, 255, 255, 0.07); }
+
+/* ---- batch bar: white candy pill ---- */
+.batch-bar { border: 1.5px solid rgba(255, 107, 74, 0.45); box-shadow: 0 18px 44px rgba(120, 70, 40, 0.30); }
+.batch-bar b { color: var(--text); }
+
+/* ---- select ring = candy violet, progress bar = candy ---- */
+.sel-card { outline-color: var(--violet); box-shadow: 0 0 26px rgba(124, 92, 255, 0.25) !important; }
+.wp-bar i { background: linear-gradient(90deg, #ffc93c, #ff5d8f); box-shadow: 0 0 8px rgba(255, 201, 60, 0.8); }
+
+/* ---- misc polish ---- */
+.paste-btn { background: rgba(18, 184, 160, 0.14); border-color: rgba(18, 184, 160, 0.4); color: #0d8570; }
+[data-theme="dark"] .paste-btn { color: #4ce0b8; }
+.empty-state { border-color: var(--glass-brd); }
+.remark-box { background: rgba(255, 201, 60, 0.10); border-left: 3px solid var(--amber); }
+code { background: rgba(255, 107, 74, 0.08); color: #c0503a; border-radius: 6px; padding: 1.5px 6px; }
+[data-theme="dark"] code { color: #ffb3a0; }
+.mod-h h3 { font-family: var(--font-h); }
+.mod-h .tag { background: rgba(255, 201, 60, 0.18); color: #a06808; }
+[data-theme="dark"] .mod-h .tag { color: #ffd88a; }
+.lock-screen { background: radial-gradient(900px 700px at 50% -10%, #ffe3c4, var(--bg)); }
+[data-theme="dark"] .lock-screen { background: radial-gradient(900px 700px at 50% -10%, #3a2a24, var(--bg)); }
+.lock-card { color: var(--text); }
+
+/* ---- footer ---- */
+.page-footer { color: var(--muted); }
+
+/* phone pe batch-bar aur Ask AI FAB takraaye nahi — select mode mein FAB politely gayab */
+.aichat-fab { transition: all .25s ease; }
+body.batch-on .aichat-fab { opacity: 0; pointer-events: none; transform: translateY(18px) scale(.9); }
+body.batch-on #rv-aichat { pointer-events: none; }
+
+/* light theme mein background rays halke — cards pe focus clear rahe */
+:root[data-theme="light"] #rv-bg { opacity: .5; }
+
+/* ============================================================================
+   v8.1 TOP LAYOUT — niche BILKUL khaali · sab controls upar achi jagah
+   ============================================================================ */
+
+/* purani bottom nav hatao — ab ☰ drawer hai */
+.bottomnav { display: none !important; }
+
+/* ☰ hamburger — sirf phone pe */
+.js-menu { margin-right: 2px; }
+@media (min-width: 1000px) { .js-menu { display: none !important; } }
+
+/* topbar ke naye buttons */
+.top-add { font-weight: 700; }
+@media (max-width: 999px) {
+  .topbar { gap: 8px; }
+  .topbar-right { gap: 6px; }
+  .topbar .btn-export, .topbar .chip-demo, .topbar .chip-status { display: none !important; }
+  .top-add { padding: 8px 13px !important; border-radius: 12px; min-height: 36px; }
+}
+@media (max-width: 380px) { .top-add { padding: 8px 10px !important; } }
+
+/* ---- ☰ drawer (phone) — left se slide, saare pages ache spaced ---- */
+@media (max-width: 999px) {
+  .sidebar {
+    display: flex !important; position: fixed !important; z-index: 96;
+    top: 0 !important; bottom: 0 !important; left: 0 !important; right: auto !important;
+    width: min(302px, 84vw); margin: 0; padding: calc(22px + env(safe-area-inset-top, 0px)) 14px 18px;
+    background: var(--card-strong); border: 1.5px solid var(--glass-brd); border-radius: 0 26px 26px 0;
+    box-shadow: 26px 0 60px rgba(90, 50, 20, 0.22); backdrop-filter: blur(20px);
+    flex-direction: column; gap: 8px;
+    transform: translateX(-110%); transition: transform .34s cubic-bezier(.2,.9,.3,1.15);
+  }
+  body.drawer-open .sidebar { transform: none; }
+  .sidebar .side-link {
+    display: flex; align-items: center; gap: 12px; padding: 14px 15px; border-radius: 15px;
+    color: var(--muted); font-weight: 700; font-size: 15px; font-family: inherit; cursor: pointer;
+    background: none; border: 1.5px solid transparent; text-align: left; width: 100%; transition: all .2s;
+  }
+  .sidebar .side-link:hover { color: var(--text); background: rgba(255, 107, 74, 0.10); }
+  .sidebar .side-link.active { color: #fff; background: var(--grad-btn); box-shadow: 0 8px 20px rgba(255, 93, 110, 0.40); }
+  .sidebar .side-ic { width: 22px; text-align: center; font-size: 15px; }
+  .sidebar .side-add { margin-top: auto; color: #fff; background: var(--grad-green); box-shadow: 0 8px 20px rgba(18, 184, 160, 0.35); }
+  .drawer-back {
+    position: fixed; inset: 0; z-index: 95; background: rgba(64, 51, 44, 0.40); backdrop-filter: blur(2px);
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  body.drawer-open .drawer-back { opacity: 1; pointer-events: auto; }
+}
+@media (min-width: 1000px) {
+  .drawer-back { display: none; }
+  .sidebar .side-link { cursor: pointer; font-family: inherit; font-size: 13.5px; }
+}
+
+/* Ask AI floating button GAYAB — trigger upar hai (topbar/drawer) */
+.aichat-fab { display: none !important; }
+
+/* AI panel — upar se khulta hai (topbar ke neeche), niche se nahi */
+.aichat-panel {
+  top: calc(80px + env(safe-area-inset-top, 0px)) !important; bottom: auto !important;
+  right: 12px !important; height: min(520px, calc(100dvh - 170px));
+}
+@media (min-width: 1000px) { .aichat-panel { right: 22px !important; top: 96px !important; } }
+
+/* toasts/popups UPAR shift — neeche kuch nahi udega */
+#rv-toasts { bottom: auto !important; top: calc(78px + env(safe-area-inset-top, 0px)) !important; }
+@media (min-width: 1000px) { #rv-toasts { top: 96px !important; } }
+#rv-offline { bottom: auto !important; top: calc(126px + env(safe-area-inset-top, 0px)) !important; }
+@media (min-width: 1000px) { #rv-offline { bottom: auto !important; top: 140px !important; } }
+
+/* batch bar bhi UPAR — toolbar ke paas, thumb-friendly nahi par clean */
+.batch-bar { bottom: auto !important; top: calc(78px + env(safe-area-inset-top, 0px)) !important; }
+@media (min-width: 1000px) { .batch-bar { top: 96px !important; } }
+body.batch-on .page { padding-bottom: 0 !important; }
+
+/* content ko neeche se khali jagah — pahle bottomnav ke liye padding thi, ab halki */
+.page { padding-bottom: 40px !important; }
+
+/* topbar ka ＋Add hamesha candy gradient rahe (btn-mini override na kha jaye) */
+.btn-primary.btn-mini, .top-add.btn-primary { background: var(--grad-btn) !important; color: #fff !important; box-shadow: 0 6px 16px rgba(255, 93, 110, 0.35); }

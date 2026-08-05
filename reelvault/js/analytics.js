@@ -4,13 +4,13 @@
   const $ = RVUI.$, $$ = RVUI.$$;
   let charts = [];
   const css = (v, fb) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || fb;
-  /* Aurora palette */
-  const A = { teal: "#37e0c8", violet: "#8a6ff5", pink: "#ff6fb0", gold: "#f2b04c", blue: "#6aa8ff", coral: "#e07856", mint: "#8fd8a0" };
+  /* Paper-pop candy palette */
+  const A = { teal: "#12b8a0", violet: "#7c5cff", pink: "#ff5d8f", gold: "#ffc93c", blue: "#4f8cff", coral: "#ff6b4a", mint: "#8fd8a0" };
   const PALETTE = [A.teal, A.violet, A.pink, A.gold, A.blue, A.coral, A.mint];
 
   function destroyAll() { charts.forEach((c) => c.destroy()); charts = []; }
   function baseOpts() {
-    Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+    Chart.defaults.font.family = "Poppins, system-ui, sans-serif";
     Chart.defaults.color = css("--muted", "#9aa3c7");
     Chart.defaults.borderColor = css("--line", "rgba(255,255,255,.12)");
     return { responsive: true, maintainAspectRatio: false, animation: { duration: 1200, easing: "easeOutQuart" } };

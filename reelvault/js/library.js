@@ -297,6 +297,10 @@
       const move = (ev) => {
         if (!started) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 7) return; begin(ev); }
         ghost.style.transform = `translate(${ev.clientX - sx}px, ${ev.clientY - sy}px) rotate(1.4deg)`;
+        /* edge auto-scroll — phone pe neeche/upar le jaate waqt page khud scroll ho */
+        const EDGE = 70;
+        if (ev.clientY < EDGE) window.scrollBy(0, -16);
+        else if (ev.clientY > window.innerHeight - EDGE) window.scrollBy(0, 16);
         $$("#lib-grid .lib-card").forEach((c) => c.classList.remove("drop-before", "drop-after"));
         if (ev.cancelable) ev.preventDefault();
         const el = document.elementFromPoint(ev.clientX, ev.clientY);

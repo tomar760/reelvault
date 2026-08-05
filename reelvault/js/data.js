@@ -22,16 +22,16 @@
   /* ---------- config (mirrors Lists_Settings tab) ---------- */
   const TOPICS = [
     { key: "tech",     label: "Tech & n8n Workflows", folder: "Tech-n8n",      thumb: "assets/thumbs/tech.jpg",     color: "#1f6feb" },
-    { key: "ai",       label: "AI Tools",             folder: "AI-Tools",      thumb: "assets/thumbs/ai.jpg",       color: "#8250df" },
+    { key: "ai",       label: "AI Tools",             folder: "AI-Tools",      thumb: "assets/thumbs/ai.jpg",       color: "#7c5cff" },
     { key: "business", label: "Business & Marketing", folder: "Business-Mktg", thumb: "assets/thumbs/business.jpg", color: "#bf7500" },
     { key: "finance",  label: "Finance & Money",      folder: "Finance-Money", thumb: "assets/thumbs/finance.jpg",  color: "#2da44e" },
     { key: "fitness",  label: "Fitness & Health",     folder: "Fitness-Health",thumb: "assets/thumbs/fitness.jpg",  color: "#d1242f" },
     { key: "misc",     label: "Misc / Other",         folder: "Misc-Other",    thumb: "assets/thumbs/misc.jpg",     color: "#57606a" },
   ];
   const RATINGS = [
-    { key: "high",   label: "Very Useful", importance: "High",   color: "#2da44e", folder: "01_High_Importance"  },
-    { key: "medium", label: "Useful",      importance: "Medium", color: "#bf7500", folder: "02_Medium_Importance"},
-    { key: "low",    label: "Average",     importance: "Low",    color: "#57606a", folder: "03_Low_Importance"  },
+    { key: "high",   label: "Very Useful", importance: "High",   color: "#1aa179", folder: "01_High_Importance"  },
+    { key: "medium", label: "Useful",      importance: "Medium", color: "#e8930c", folder: "02_Medium_Importance"},
+    { key: "low",    label: "Average",     importance: "Low",    color: "#98a2b3", folder: "03_Low_Importance"  },
   ];
   const PLATFORMS = [
     { key: "Instagram", code: "IG", color: "#c2255c" },

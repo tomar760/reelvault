@@ -23,7 +23,7 @@ function setState(job, patch) { Object.assign(job, patch); }
 /* ---------- public API ---------- */
 function enqueue(payload) {
   const id = newJobId();
-  const job = { id, state: "queued", pct: 0, label: "Queued…", sub: "", stage: "", error: "", srNo: payload.sr || "", rowIndex: payload.rowIndex || null, attempts: payload.attempts || 1, payload };
+  const job = { id, state: "queued", pct: 0, label: "Queued…", sub: "", stage: "", error: "", srNo: payload.sr || "", rowIndex: (payload.rowIndex && payload.rowIndex >= 2) ? payload.rowIndex : null, attempts: payload.attempts || 1, payload };
   jobs.set(id, job);
   fifo.push(id);
   pump();

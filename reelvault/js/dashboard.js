@@ -120,7 +120,7 @@
   function renderCharts() {
     charts.forEach((c) => c.destroy()); charts = [];
     if (typeof Chart === "undefined") return;
-    Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+    Chart.defaults.font.family = "Poppins, system-ui, sans-serif";
     Chart.defaults.color = css("--muted", "#8b949e");
 
     // M6 weekly line
@@ -129,8 +129,8 @@
       type: "line",
       data: { labels: wk.map((w) => w.label), datasets: [{
         label: "Videos saved / week", data: wk.map((w) => w.count),
-        borderColor: "#1f6feb", backgroundColor: "rgba(31,111,235,.14)",
-        fill: true, tension: 0.42, pointRadius: 4, pointBackgroundColor: "#1f6feb",
+        borderColor: "#ff6b4a", backgroundColor: "rgba(255,107,74,.15)",
+        fill: true, tension: 0.42, pointRadius: 4, pointBackgroundColor: "#ff6b4a",
       }] },
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -162,7 +162,7 @@
     // M12 storage gauge
     const s = RVData.stats();
     const used = Math.min(15, s.driveGB), pct = used / 15 * 100;
-    const col = pct < 66 ? "#2da44e" : pct < 86 ? "#bf7500" : "#cf222e";
+    const col = pct < 66 ? "#12b8a0" : pct < 86 ? "#e8930c" : "#ff5d5d";
     charts.push(new Chart($("#ch-gauge"), {
       type: "doughnut",
       data: { datasets: [{ data: [pct, 100 - pct], backgroundColor: [col, css("--line", "#30363d")], borderWidth: 0 }] },

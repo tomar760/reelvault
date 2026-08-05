@@ -34,12 +34,12 @@
 
   /* ---------------- theme ---------------- */
   function applyTheme() {
-    const th = localStorage.getItem("rv_theme") || "dark";
+    const th = localStorage.getItem("rv_theme") || "light";
     document.documentElement.dataset.theme = th;
     $$(".js-theme-icon").forEach((e) => (e.textContent = th === "dark" ? "☾" : "☀"));
   }
   function toggleTheme() {
-    localStorage.setItem("rv_theme", (localStorage.getItem("rv_theme") || "dark") === "dark" ? "light" : "dark");
+    localStorage.setItem("rv_theme", (localStorage.getItem("rv_theme") || "light") === "dark" ? "light" : "dark");
     applyTheme(); toast("Theme updated");
   }
 
@@ -674,11 +674,11 @@
       }
       /* ---- 4. Theme ---- */
       if (/dark|light|theme/.test(low)) {
-        const cur = localStorage.getItem("rv_theme") || "dark";
+        const cur = localStorage.getItem("rv_theme") || "light";
         const want = /dark/.test(low) ? "dark" : (/light/.test(low) ? "light" : (cur === "dark" ? "light" : "dark"));
         localStorage.setItem("rv_theme", want);
         applyTheme();
-        return want === "dark" ? "🌙 Aurora Dark laga diya. Raat ko aankhein aram se!" : "☀️ Aurora Day laga diya. Fresh feel!";
+        return want === "dark" ? "🌙 Paper Night laga diya. Raat ko aankhein aram se!" : "☀️ Paper Pop laga diya. Fresh feel!";
       }
       /* ---- 5. Open pages ---- */
       const pg = low.match(/(?:open|kholo| dikhao| dikha)\s*(library|vault|activity|settings|insights|analytics|dashboard)/);
@@ -1131,4 +1131,76 @@
       setTimeout(() => { const i = wrap.querySelector("#fp-new"); i && i.focus({ preventScroll: true }); }, 300);
     });
   };
+})();
+
+/* ============================================================
+   v8.1 TOP LAYOUT — niche sab khaali: hamburger drawer ☰ +
+   topbar mein ＋Add/✦AI · toasts upar · batch bar upar
+   (features untouched — sirf placement)
+   ============================================================ */
+(function () {
+  "use strict";
+  if (!window.RVUI) return;
+  const origInit = RVUI.init.bind(RVUI);
+  RVUI.init = function (page) {
+    origInit(page);
+    try { layoutPatch(); } catch (_) {}
+  };
+  function layoutPatch() {
+    const top = document.querySelector(".topbar");
+    if (!top || top.querySelector(".js-menu")) return;
+    const closeD = () => document.body.classList.remove("drawer-open");
+
+    /* ☰ hamburger (mobile) — topbar ke sabse left */
+    const menu = document.createElement("button");
+    menu.className = "icon-btn js-menu";
+    menu.setAttribute("aria-label", "Menu kholo");
+    menu.innerHTML = '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>';
+    top.insertBefore(menu, top.firstChild);
+    menu.addEventListener("click", (e) => { e.stopPropagation(); document.body.classList.toggle("drawer-open"); });
+
+    /* backdrop */
+    let back = document.querySelector(".drawer-back");
+    if (!back) {
+      back = document.createElement("div");
+      back.className = "drawer-back";
+      document.body.appendChild(back);
+      back.addEventListener("click", closeD);
+    }
+    document.querySelectorAll(".sidebar .side-link[href]").forEach((a) => a.addEventListener("click", closeD));
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeD(); });
+
+    /* topbar-right: ＋Add + ✦AI pehle (niche floating buttons ki jagah) */
+    const right = top.querySelector(".topbar-right");
+    if (right && !right.querySelector(".top-add")) {
+      const ai = document.createElement("button");
+      ai.className = "icon-btn js-ai-top";
+      ai.title = "Ask AI — tumhara Hinglish assistant";
+      ai.textContent = "✦";
+      ai.addEventListener("click", () => { const f = document.getElementById("aichat-fab"); f && f.click(); });
+      const add = document.createElement("button");
+      add.className = "btn btn-primary btn-mini top-add";
+      add.textContent = "＋ Add";
+      add.title = "Quick Add — video ya resource save karo";
+      add.addEventListener("click", () => RVUI.openQuickAdd());
+      right.insertBefore(ai, right.firstChild);
+      right.insertBefore(add, right.firstChild);
+    }
+
+    /* drawer/sidebar mein Ask AI + Excel bhi (niche ka samaan yahin shift) */
+    const side = document.querySelector(".sidebar");
+    if (side && !side.querySelector(".js-ai-side")) {
+      const qa = side.querySelector(".side-add");
+      const ai2 = document.createElement("button");
+      ai2.className = "side-link js-ai-side";
+      ai2.innerHTML = '<span class="side-ic">✦</span><span>Ask AI</span>';
+      ai2.addEventListener("click", () => { closeD(); const f = document.getElementById("aichat-fab"); f && f.click(); });
+      const xl = document.createElement("button");
+      xl.className = "side-link js-xl-side";
+      xl.innerHTML = '<span class="side-ic">⬇</span><span>Excel Export</span>';
+      xl.addEventListener("click", () => { closeD(); RVUI.exportExcel(); });
+      side.insertBefore(xl, qa);
+      side.insertBefore(ai2, qa);
+    }
+  }
 })();

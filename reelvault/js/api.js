@@ -188,6 +188,31 @@
     async aistats() { if (!isLive()) return null; return await req("/api/aistats"); },
   };
 
+  /* ---- ✨ NAYA VERSION apne aap: GitHub se push karo → app khud refresh ----
+     version.txt har 5 min check hota hai; badla to ek baar toast + ek baar reload. */
+  (function versionWatcher() {
+    async function check() {
+      try {
+        const r = await fetch(`version.txt?t=${Date.now()}`, { cache: "no-store" });
+        if (!r.ok) return;
+        const v = (await r.text()).trim().slice(0, 40);
+        const old = localStorage.getItem("rv_version");
+        localStorage.setItem("rv_version", v);
+        if (old && old !== v) {
+          RVUI.toast("✨ Naya update aa gaya — app apne aap refresh ho raha hai…", "ok", 2400);
+          setTimeout(async () => {
+            try { if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.map((k) => caches.delete(k))); } } catch (_) {}
+            try { const regs = await navigator.serviceWorker.getRegistrations(); regs.forEach((rg) => rg.update()); } catch (_) {}
+            location.reload();
+          }, 2400);
+        }
+      } catch (_) { /* offline — next interval pe try */ }
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", () => setTimeout(check, 3000));
+    else setTimeout(check, 3000);
+    setInterval(check, 5 * 60 * 1000);
+  })();
+
   if (!isLive()) return; // ← DEMO MODE: nothing changes
 
   // LIVE MODE boot (runs before RVUI.init finishes page build)
@@ -233,19 +258,30 @@
       } catch (e) {
         const st2 = document.getElementById("rv-be-status");
         if (st2) st2.innerHTML = '<span class="dot dot-red"></span>Backend: unreachable';
-        RVUI.toast("Backend unreachable — will keep retrying quietly in the background.", "err", 5200);
-        /* self-heal: keep pinging every 30s; as soon as the backend wakes, flip to live */
+        /* self-heal: keep pinging every 30s — SILENT (koi popup/toast nahi, sirf chip badlega) */
         const heal = setInterval(async () => {
           try {
             const health = await req("/api/health");
             clearInterval(heal);
             await refreshCaches().catch(() => {});
             paintChips(health);
-            RVUI.toast("Backend connected — you're live ✓");
             window.RVRefresh && window.RVRefresh();
           } catch (_) { /* still asleep — try again in 30s */ }
         }, 30000);
       }
     })();
   };
+
+  /* ---- 🔄 quiet auto-sync: refresh DABANE ki zaroorat khatam ----
+     har 45 sec (tab visible ho to) + wapas aate hi — data apne aap update.
+     Bilkul silent: koi toast nahi, sirf cards/charts badal jaate hain. */
+  let syncing = false;
+  window.RVQuietSync = async function () {
+    if (syncing) return;
+    syncing = true;
+    try { await refreshCaches(); window.RVRefresh && window.RVRefresh(); } catch (_) {}
+    finally { syncing = false; }
+  };
+  setInterval(() => { if (document.visibilityState === "visible") window.RVQuietSync(); }, 45000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") setTimeout(window.RVQuietSync, 1200); });
 })();

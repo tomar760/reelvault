@@ -57,7 +57,7 @@ const fail = (res, e, code = 500) => {
 r.get("/api/health", async (req, res) => {
   let sheet = "unknown";
   try { await sheets.readLists(); sheet = "ok"; } catch (e) { sheet = "error: " + e.message.slice(0, 80); }
-  res.json({ ok: true, awake: true, ts: Date.now(), queue: queue.queueLength(), sheet });
+  res.json({ ok: true, awake: true, ts: Date.now(), queue: queue.queueLength(), sheet, backend: "v8.0-srfix" });
 });
 
 /* ---------- verify passcode (public — lock screen uses this) ---------- */
@@ -278,7 +278,7 @@ r.post("/api/retry/:srNo", async (req, res) => {
   try {
     const sr = req.params.srNo;
     const all = await sheets.readVideos();
-    const v = all.find((x) => x.Sr_No === sr);
+    const v = all.find((x) => String(x.Sr_No).trim() === String(sr).trim() || (!isNaN(parseInt(sr, 10)) && parseInt(x.Sr_No, 10) === parseInt(sr, 10)));
     if (!v) return fail(res, new Error("Sr. No. not found"), 404);
     if (v.Download_Status === "Done") return fail(res, new Error("already downloaded"), 400);
     const rowIndex = await sheets.findRowIndexBySr(sr);
@@ -297,7 +297,7 @@ r.post("/api/edit/:srNo", async (req, res) => {
     const sr = req.params.srNo;
     const { ratingKey, topicKey, remarks } = req.body || {};
     const all = await sheets.readVideos();
-    const v = all.find((x) => x.Sr_No === sr);
+    const v = all.find((x) => String(x.Sr_No).trim() === String(sr).trim() || (!isNaN(parseInt(sr, 10)) && parseInt(x.Sr_No, 10) === parseInt(sr, 10)));
     if (!v) return fail(res, new Error("Sr. No. not found"), 404);
     const rowIndex = await sheets.findRowIndexBySr(sr);
 
