@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Library · ReelVault</title>
+  <meta name="description" content="Every saved video — searchable, filterable, organized."/>
+  <meta name="theme-color" content="#fff6e9"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <script>document.documentElement.dataset.theme = localStorage.getItem("rv_theme") || "light";</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body data-bg="strips">
+  <canvas id="rv-bg"></canvas>
+  <div class="bg-tint"></div>
+
+  <main class="page">
+    <div class="page-head">
+      <h1>Content Library</h1>
+      <p><span id="lib-count">—</span> · click any card for full details</p>
+    </div>
+
+    <!-- M5: SEARCH & FILTER BAR -->
+    <div class="lib-toolbar glass" style="padding:14px">
+      <input type="search" id="lib-search" placeholder="Search title, tags, remarks, file name…"/>
+      <select id="f-platform"></select>
+      <select id="f-topic"></select>
+      <select id="f-rating"></select>
+      <select id="f-status"></select>
+      <select id="f-sort">
+        <option value="date-desc">Newest first</option>
+        <option value="date-asc">Oldest first</option>
+        <option value="size-desc">Largest files</option>
+        <option value="rating">Highest rated</option>
+        <option value="custom">✨ My order (drag)</option>
+      </select>
+      <label class="lib-check"><input type="checkbox" id="f-wf"/> only with workflow</label>
+      <button class="btn btn-mini" id="f-fav" type="button" title="Sirf favourite videos">♡ Favourites</button>
+      <button class="btn btn-mini" id="f-view" type="button" title="Grid · List · Folders — cycle karo">▦ Grid view</button>
+      <button class="btn btn-mini" id="f-select" type="button" title="Kai videos ek saath select karo">☑ Select</button>
+      <button class="btn btn-mini btn-ghost" id="lib-clear">Clear</button>
+    </div>
+
+    <!-- Folders breadcrumb (folders view mein dikhta hai) -->
+    <div class="lib-crumbs" id="lib-crumbs" hidden></div>
+
+    <!-- M4: LIBRARY GRID -->
+    <div class="lib-grid" id="lib-grid"></div>
+    <button class="btn btn-ghost" id="lib-more">Load more</button>
+
+    <p class="page-footer">ReelVault Library · demo data</p>
+  </main>
+
+  <script src="xlsx-style.min.js"></script>
+  <script src="data.js"></script>
+  <script src="bg.js"></script>
+  <script src="ui.js"></script>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="library.js"></script>
+  <script>
+    RVUI.init("library");
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  </script>
+</body>
+</html>

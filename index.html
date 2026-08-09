@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Dashboard · ReelVault</title>
+  <meta name="description" content="ReelVault — Paste. Download. Organize. Done. Your personal video vault."/>
+  <meta name="theme-color" content="#fff6e9"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <script>document.documentElement.dataset.theme = localStorage.getItem("rv_theme") || "light";</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body data-bg="orbs">
+  <canvas id="rv-bg"></canvas>
+  <div class="bg-tint"></div>
+
+  <main class="page">
+    <div class="page-head">
+      <h1>Dashboard</h1>
+      <p id="today-line">—</p>
+    </div>
+
+    <!-- M1: OVERVIEW STAT CARDS -->
+    <div class="stats-row" id="m1-cards"></div>
+
+    <div class="dash" style="margin-top:16px">
+      <!-- M2: QUICK ADD PANEL -->
+      <section class="mod glass span4">
+        <div class="mod-h"><h3>＋ Quick Add</h3><span class="tag">M2</span></div>
+        <form id="dash-qa-form" novalidate>
+          <label class="fld"><span>Video link</span>
+            <div class="link-row">
+              <input id="dqa-link" type="url" placeholder="Paste a reel / video link…"/>
+              <span class="plat-badge" id="dqa-plat">—</span>
+            </div>
+          </label>
+          <label class="fld"><span>Topic</span>
+            <select id="dqa-topic">
+              <option value="tech">Tech &amp; n8n Workflows</option>
+              <option value="ai">AI Tools</option>
+              <option value="business">Business &amp; Marketing</option>
+              <option value="finance">Finance &amp; Money</option>
+              <option value="fitness">Fitness &amp; Health</option>
+              <option value="misc">Misc / Other</option>
+            </select>
+          </label>
+          <div class="fld"><span>Rating — decides the Drive folder</span>
+            <div class="rate-row" id="dqa-rating">
+              <button type="button" data-r="high" class="rate-btn rate-high active">Very Useful</button>
+              <button type="button" data-r="medium" class="rate-btn rate-med">Useful</button>
+              <button type="button" data-r="low" class="rate-btn rate-low">Average</button>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-big" type="submit"><span class="btn-spark"></span>ADD VIDEO</button>
+          <p class="muted" style="font-size:11px">Received a workflow from the influencer? Use the big ＋ button — it has a message box.</p>
+        </form>
+      </section>
+
+      <!-- M3: LIVE DOWNLOAD STATUS -->
+      <section class="mod glass span4">
+        <div class="mod-h"><h3>◈ Live Download Status</h3><span class="tag">M3</span></div>
+        <div id="m3-body">
+          <div class="empty-state">Nothing downloading right now.<br/>Add a link on the left to watch the pipeline live.</div>
+        </div>
+      </section>
+
+      <!-- M10: FAILED & RETRY QUEUE -->
+      <section class="mod glass span4">
+        <div class="mod-h"><h3>! Failed &amp; Retry Queue</h3><span class="tag">M10</span></div>
+        <div id="m10-failed"></div>
+      </section>
+
+      <!-- M6: ANALYTICS (ANIMATED) -->
+      <section class="mod glass span8">
+        <div class="mod-h"><h3>▲ Downloads per Week</h3><span class="tag anim">M6 · ANIMATED</span></div>
+        <div class="chart-box"><canvas id="ch-weekly"></canvas></div>
+      </section>
+
+      <!-- M7: RATING DISTRIBUTION (ANIMATED) -->
+      <section class="mod glass span4">
+        <div class="mod-h"><h3>◍ Rating Distribution</h3><span class="tag anim">M7 · ANIMATED</span></div>
+        <div class="chart-box"><canvas id="ch-rating"></canvas></div>
+      </section>
+
+      <!-- M4: RECENT VIDEOS -->
+      <section class="mod glass span8">
+        <div class="mod-h"><h3>▦ Recent Videos</h3><span class="tag">M4</span></div>
+        <div id="m4-recent"></div>
+      </section>
+
+      <!-- M12: STORAGE & SYSTEM MONITOR (ANIMATED) -->
+      <section class="mod glass span4">
+        <div class="mod-h"><h3>◔ Storage &amp; System</h3><span class="tag anim">M12 · ANIMATED</span></div>
+        <div class="gauge-wrap">
+          <canvas id="ch-gauge"></canvas>
+          <div id="gauge-center"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px">
+          <span class="muted">Backend</span><span><span id="be-dot" class="dot dot-green"></span> <span class="muted">demo · ready</span></span>
+        </div>
+      </section>
+
+      <!-- M8: TOPIC CLOUD -->
+      <section class="mod glass span8">
+        <div class="mod-h"><h3>◈ Topic Cloud</h3><span class="tag">M8</span></div>
+        <div class="topic-cloud" id="m8-topics"></div>
+      </section>
+
+      <!-- M9: WORKFLOW VAULT PREVIEW -->
+      <section class="mod glass span4">
+        <div class="mod-h"><h3>◆ Workflow Vault</h3><span class="tag">M9</span></div>
+        <div id="m9-vault"></div>
+      </section>
+
+      <!-- M13: ACTIVITY TIMELINE TICKER -->
+      <section class="mod glass span12">
+        <div class="mod-h"><h3>↻ Activity Timeline</h3><span class="tag">M13</span></div>
+        <div class="ticker"><div class="ticker-track" id="m13-ticker"></div></div>
+      </section>
+    </div>
+
+    <p class="page-footer">ReelVault · Paste. Download. Organize. Done. · Frontend demo with sample data — backend connects in Phase 1.</p>
+  </main>
+
+  <noscript>ReelVault needs JavaScript enabled.</noscript>
+  <script src="chart.umd.min.js"></script>
+  <script src="xlsx-style.min.js"></script>
+  <script src="data.js"></script>
+  <script src="bg.js"></script>
+  <script src="ui.js"></script>
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="dashboard.js"></script>
+  <script>
+    RVUI.init("dashboard");
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  </script>
+</body>
+</html>
